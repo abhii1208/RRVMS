@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getDashboard, getEcDashboard, type DashboardResponse, type EcDashboardResponse } from '../services/apiClient'
+import { getDashboard, getEcDashboard, getHealth, type DashboardResponse, type EcDashboardResponse } from '../services/apiClient'
 import { useAuth } from '../auth/useAuth'
 import { userFacingApiError } from '../utils/logger'
 import { formatStatus } from '../utils/formatters'
@@ -16,17 +16,10 @@ export function DashboardPage() {
   const load = () => {
     setLoading(true)
     setError('')
-    if (isEc) {
-      getEcDashboard()
-        .then(setEcDashboard)
-        .catch((reason) => setError(userFacingApiError(reason, 'EC Dashboard data could not be loaded.')))
-        .finally(() => setLoading(false))
-    } else {
-      getDashboard()
-        .then(setDashboard)
-        .catch((reason) => setError(userFacingApiError(reason, 'Dashboard data could not be loaded.')))
-        .finally(() => setLoading(false))
-    }
+    getHealth()
+      .then(() => isEc ? getEcDashboard().then(setEcDashboard) : getDashboard().then(setDashboard))
+      .catch((reason) => setError(userFacingApiError(reason, isEc ? 'EC Dashboard data could not be loaded.' : 'Dashboard data could not be loaded.')))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {

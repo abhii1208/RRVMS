@@ -2,19 +2,26 @@ import axios from 'axios'
 import { logger } from '../utils/logger'
 
 const isProd = import.meta.env.PROD
-const rawEnvUrl = import.meta.env.VITE_API_BASE_URL
+const rawEnvUrl = import.meta.env.VITE_API_BASE_URL?.trim()
 
-if (isProd && !rawEnvUrl) {
-  console.error('[RRVMS CONFIG ERROR] VITE_API_BASE_URL is not set in Vercel environment variables for production build!')
+const isAbsoluteHttpUrl = (value: string) => /^https?:\/\/[^\s/]+(?:\/[^\s]*)?$/i.test(value)
+const apiConfigurationError = isProd && !rawEnvUrl
+  ? 'VITE_API_BASE_URL is missing from the production frontend build.'
+  : rawEnvUrl && !isAbsoluteHttpUrl(rawEnvUrl)
+    ? 'VITE_API_BASE_URL must be an absolute http(s) URL.'
+    : ''
+
+if (apiConfigurationError) {
+  console.error('[RRVMS CONFIG ERROR]', apiConfigurationError)
 }
 
-const configuredBaseUrl = rawEnvUrl
-  ? rawEnvUrl
-  : isProd
-    ? ''
-    : 'http://localhost:5000'
+const configuredBaseUrl = rawEnvUrl || (isProd ? '' : 'http://localhost:5000')
 
 export const apiBaseUrl = configuredBaseUrl ? configuredBaseUrl.replace(/\/+$/, '') : ''
+
+if (apiBaseUrl) {
+  console.info('[RRVMS API CONFIG] Using API base URL:', apiBaseUrl)
+}
 
 export const apiClient = axios.create({
   baseURL: apiBaseUrl,
@@ -22,6 +29,9 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
+  if (apiConfigurationError) {
+    return Promise.reject(new Error(apiConfigurationError))
+  }
   const userId = localStorage.getItem('rrvms.mock.session')
   if (userId) config.headers['X-RRVMS-Prototype-User'] = userId
   return config

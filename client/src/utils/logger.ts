@@ -17,6 +17,7 @@ export const logger = {
 
 export function userFacingApiError(error: unknown, fallback: string) {
   logger.error(fallback, axios.isAxiosError(error) ? { status: error.response?.status, message: error.message, backend: error.response?.data } : error)
+  if (error instanceof Error && error.message.includes('VITE_API_BASE_URL')) return 'The deployed API is not configured for this frontend build.'
   if (!error || !axios.isAxiosError(error)) return fallback
   if (!error.response) return 'Unable to connect to RRVMS services.'
   if (error.response.status === 401) return 'Your session has expired. Please sign in again.'
