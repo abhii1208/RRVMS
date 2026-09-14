@@ -33,18 +33,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var databaseUrl = builder.Configuration["DATABASE_URL"];
-var connectionString = string.IsNullOrWhiteSpace(databaseUrl)
-    ? builder.Configuration.GetConnectionString("DefaultConnection")
-    : databaseUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || databaseUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
-        ? NormalizeDatabaseUrl(databaseUrl)
-        : databaseUrl;
-connectionString = NormalizeNpgsqlConnectionString(connectionString);
+var connectionString = ResolveConnectionString(builder.Configuration);
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
         "DATABASE_URL is not configured. Set it in server/.env, as an environment variable, or use .NET user secrets.");
 }
 
+LogDatabaseTarget(connectionString, HasConfiguredValue(builder.Configuration["DATABASE_URL"]) ? "DATABASE_URL" : "ConnectionStrings__DefaultConnection/appsettings");
 builder.Services.AddDbContext<RrvmsDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IVisitorRequestService, VisitorRequestService>();
 builder.Services.AddHttpContextAccessor();
@@ -97,19 +93,19 @@ async Task RunMigrationsAndExit()
     {
         LoadLocalEnvironmentFile();
         
-        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-        var connectionString = string.IsNullOrWhiteSpace(databaseUrl)
-            ? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            : databaseUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || databaseUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
-                ? NormalizeDatabaseUrl(databaseUrl)
-                : databaseUrl;
-        connectionString = NormalizeNpgsqlConnectionString(connectionString);
+        var configuration = new ConfigurationManager();
+        configuration.SetBasePath(Directory.GetCurrentDirectory());
+        configuration.AddJsonFile("appsettings.json", optional: true);
+        configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true);
+        configuration.AddEnvironmentVariables();
+        var connectionString = ResolveConnectionString(configuration);
         
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException("DATABASE_URL is not configured.");
         }
 
+        LogDatabaseTarget(connectionString, HasConfiguredValue(configuration["DATABASE_URL"]) ? "DATABASE_URL" : "ConnectionStrings__DefaultConnection/appsettings");
         var optionsBuilder = new DbContextOptionsBuilder<RrvmsDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
         
@@ -173,6 +169,32 @@ static string NormalizeDatabaseUrl(string databaseUrl)
     }
 
     return connectionBuilder.ConnectionString;
+}
+
+static string? ResolveConnectionString(IConfiguration configuration)
+{
+    // DATABASE_URL is authoritative when present, including in Render production.
+    var databaseUrl = configuration["DATABASE_URL"];
+    var configuredValue = !HasConfiguredValue(databaseUrl)
+        ? configuration.GetConnectionString("DefaultConnection")
+        : databaseUrl;
+
+    if (string.IsNullOrWhiteSpace(configuredValue)) return configuredValue;
+    return configuredValue.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || configuredValue.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+        ? NormalizeDatabaseUrl(configuredValue)
+        : NormalizeNpgsqlConnectionString(configuredValue);
+}
+
+static bool HasConfiguredValue(string? value) => !string.IsNullOrWhiteSpace(value);
+
+static void LogDatabaseTarget(string connectionString, string source)
+{
+    var connection = new NpgsqlConnectionStringBuilder(connectionString);
+    Console.WriteLine($"Database configuration source: {source}");
+    Console.WriteLine($"DB_HOST={connection.Host}");
+    Console.WriteLine($"DB_PORT={connection.Port}");
+    Console.WriteLine($"DB_DATABASE={connection.Database}");
+    Console.WriteLine($"DB_USERNAME={connection.Username}");
 }
 
 static string? NormalizeNpgsqlConnectionString(string? connectionString)

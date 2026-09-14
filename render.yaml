@@ -15,7 +15,8 @@ services:
     preDeployCommand: dotnet RRVMS.Api.dll --migrate
     autoDeploy: true
     envVars:
-      # Supabase Session Pooler connection URL supplied in Render, never committed.
+      # DATABASE_URL is authoritative in production. Copy the complete current
+      # Supabase Connect Session Pooler URI; never mix host and username values.
       - key: DATABASE_URL
         sync: false
       # Comma-separated frontend origins allowed by CORS,
