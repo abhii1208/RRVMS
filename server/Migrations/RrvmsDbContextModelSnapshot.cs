@@ -558,8 +558,6 @@ namespace RRVMS.Api.Migrations
 
                     b.HasIndex("VisitDate");
 
-                    b.HasIndex("VisitorRequestId");
-
                     b.HasIndex("VisitorRequestId", "VisitDate")
                         .IsUnique();
 
