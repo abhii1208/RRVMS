@@ -32,7 +32,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var databaseUrl = builder.Configuration["DATABASE_URL"];
 var connectionString = ResolveConnectionString(builder.Configuration);
 if (string.IsNullOrWhiteSpace(connectionString))
 {

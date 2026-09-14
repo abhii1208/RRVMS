@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using RRVMS.Api.Data;
 
 #nullable disable
 
 namespace RRVMS.Api.Migrations;
 
+[DbContext(typeof(RrvmsDbContext))]
+[Migration("20260914110000_ReceptionBatchTracking")]
 public partial class ReceptionBatchTracking : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
