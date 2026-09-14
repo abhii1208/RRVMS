@@ -8,7 +8,6 @@ public sealed class CreateVisitorRequestDto
     public bool Faculty { get; init; }
     public bool Gtr { get; init; }
     public bool IsDraft { get; init; }
-    [StringLength(160)] public string VisitingCompany { get; init; } = string.Empty;
     [Required, StringLength(120)] public string VisitingSite { get; init; } = string.Empty;
     [Required, StringLength(1000)] public string AreasToVisit { get; init; } = string.Empty;
     [Required, StringLength(80)] public string SiteTimezone { get; init; } = string.Empty;
@@ -45,7 +44,6 @@ public sealed class VisitorFormDto
     public string Email { get; init; } = string.Empty;
     public string Telephone { get; init; } = string.Empty;
     public string IdType { get; init; } = string.Empty;
-    public string IdLast4 { get; init; } = string.Empty;
     public List<VisitorAssetDto> Assets { get; init; } = [];
 }
 
@@ -63,7 +61,6 @@ public sealed class SubmitVisitorFormDto
     [EmailAddress] public string? Email { get; init; }
     [StringLength(40)] public string? Telephone { get; init; }
     [Required, StringLength(40)] public string IdType { get; init; } = string.Empty;
-    [Required, RegularExpression("^[0-9]{4}$")] public string IdLast4 { get; init; } = string.Empty;
     public bool IsDraft { get; init; }
     public List<VisitorAssetDto> Assets { get; init; } = [];
 }
@@ -101,7 +98,6 @@ public sealed record VisitorRequestDetailDto(
     VisitorDto Visitor,
     string Purpose,
     string AreasToVisit,
-    string VisitingCompany,
     string VisitingSite,
     string VisitPurposeType,
     string MainHostName,
@@ -127,7 +123,7 @@ public sealed record VisitorRequestDetailDto(
 );
 
 public sealed record VisitorFormSummaryDto(Guid Id, string Status, string FullName);
-public sealed record VisitorDto(Guid Id, string FullName, string CompanyName, string Citizenship, string Nationality, string Country, string Designation, string Email, string Phone, string IdType, string IdLast4, string VisitorType);
+public sealed record VisitorDto(Guid Id, string FullName, string CompanyName, string CompanyAddress, string Citizenship, string Nationality, string Country, string Designation, string Email, string Phone, string IdType, string VisitorType);
 public sealed record VisitDayDto(Guid Id, DateOnly VisitDate, TimeOnly? ExpectedArrivalTime, TimeOnly? ExpectedDepartureTime, string Status, DateTimeOffset? ActualArrivalTime, DateTimeOffset? ActualDepartureTime);
 public sealed record AssetDto(Guid Id, string AssetType, string Description, string SerialNumber, bool IsDeclared, bool IsVerified, string VerificationStatus);
 public sealed record AuditDto(Guid Id, string Action, string EntityType, Guid EntityId, string Details, DateTimeOffset CreatedAt);
@@ -136,4 +132,4 @@ public sealed record EcReviewDto(Guid Id, Guid ReviewerId, string Status, string
 public sealed record CommentDto(Guid Id, Guid AuthorId, string Type, string Text, DateTimeOffset CreatedAt);
 public sealed record InformationRequestDto(Guid Id, string Fields, string Comment, string Status, DateTimeOffset CreatedAt, DateTimeOffset? RespondedAt, string? ResponseSummary);
 public sealed record AttendanceDto(Guid Id, Guid? VisitDayId, string Category, bool Completed, Guid? MarkedByUserId, DateTimeOffset? MarkedAt, string? Comments);
-public sealed record VisitorFormVersionDto(Guid Id, int Version, string FullName, string Citizenship, string Nationality, string Country, string Company, string Designation, string IdType, string IdLast4, string Assets, DateTimeOffset CreatedAt);
+public sealed record VisitorFormVersionDto(Guid Id, int Version, string FullName, string Citizenship, string Nationality, string Country, string Company, string Designation, string IdType, string Assets, DateTimeOffset CreatedAt);

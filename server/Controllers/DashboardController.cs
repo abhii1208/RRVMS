@@ -24,7 +24,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
         var todaysVisits = await dbContext.VisitDays.CountAsync(day => day.VisitDate == today, cancellationToken);
         var currentlyInside = await dbContext.VisitDays.CountAsync(day => day.Status == VisitDayStatus.CHECKED_IN, cancellationToken);
         var noShows = await dbContext.VisitDays.CountAsync(day => day.Status == VisitDayStatus.NO_SHOW, cancellationToken);
-        var recentRequests = await requests.AsNoTracking().Include(request => request.Visitor).OrderByDescending(request => request.UpdatedAt).Take(10).Select(request => new { request.Id, request.RequestNumber, visitorName = request.Visitor.FullName, companyName = request.VisitingCompany, currentStatus = request.Status.ToString(), createdAt = request.CreatedAt }).ToListAsync(cancellationToken);
+        var recentRequests = await requests.AsNoTracking().Include(request => request.Visitor).OrderByDescending(request => request.UpdatedAt).Take(10).Select(request => new { request.Id, request.RequestNumber, visitorName = request.Visitor.FullName, companyName = request.Visitor.CompanyName, currentStatus = request.Status.ToString(), createdAt = request.CreatedAt }).ToListAsync(cancellationToken);
         return Ok(new { totalRequests, pendingActions = pendingEcReviews + pendingDocumentation, todaysVisits, currentlyInside, upcomingVisits = await dbContext.VisitDays.CountAsync(day => day.VisitDate > today && day.VisitorRequest.Status == RequestStatus.APPROVED, cancellationToken), noShows, pendingEcReviews, pendingDocumentation, recentRequests });
     }
 
@@ -47,7 +47,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
                 r.Id,
                 r.RequestNumber,
                 visitorName = r.Visitor.FullName,
-                companyName = r.VisitingCompany,
+                companyName = r.Visitor.CompanyName,
                 visitDate = r.VisitDays.Select(d => (DateOnly?)d.VisitDate).FirstOrDefault(),
                 dpsStatus = r.DpsRecords.OrderByDescending(d => d.PerformedAt).Select(d => d.Result.ToString()).FirstOrDefault() ?? "Flagged",
                 currentStage = "Export Control Review",
@@ -63,7 +63,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
                 r.Id,
                 r.RequestNumber,
                 visitorName = r.Visitor.FullName,
-                companyName = r.VisitingCompany,
+                companyName = r.Visitor.CompanyName,
                 visitDate = r.VisitDays.Select(d => (DateOnly?)d.VisitDate).FirstOrDefault(),
                 dpsStatus = r.DpsRecords.OrderByDescending(d => d.PerformedAt).Select(d => d.Result.ToString()).FirstOrDefault() ?? "Pending",
                 currentStage = "Pending Documentation",
@@ -79,7 +79,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
                 r.Id,
                 r.RequestNumber,
                 visitorName = r.Visitor.FullName,
-                companyName = r.VisitingCompany,
+                companyName = r.Visitor.CompanyName,
                 visitDate = r.VisitDays.Select(d => (DateOnly?)d.VisitDate).FirstOrDefault(),
                 dpsStatus = "FLAGGED",
                 currentStage = r.Status.ToString(),

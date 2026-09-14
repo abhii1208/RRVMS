@@ -39,6 +39,7 @@ public sealed class RrvmsDbContext(DbContextOptions<RrvmsDbContext> options) : D
         modelBuilder.Entity<VisitorForm>().HasIndex(form => form.VisitorRequestId);
         modelBuilder.Entity<VisitorFormVersion>().HasIndex(version => new { version.VisitorRequestId, version.Version });
         modelBuilder.Entity<VisitDay>().HasIndex(day => day.VisitDate);
+        modelBuilder.Entity<VisitDay>().HasIndex(day => new { day.VisitorRequestId, day.VisitDate }).IsUnique();
         modelBuilder.Entity<VisitDay>().HasIndex(day => day.Status);
         modelBuilder.Entity<ECReview>().HasIndex(review => review.Status);
         modelBuilder.Entity<Comment>().HasIndex(comment => comment.VisitorRequestId);

@@ -112,7 +112,7 @@ export function ReceptionPage() {
                         <td className="p-3 text-[var(--muted)]">{item.mainHost}{item.escort ? ` / ${item.escort}` : ''}</td>
                         <td className="p-3 text-[var(--muted)]">{[item.faculty && 'Faculty', item.gtr && 'GTR', item.idClassification].filter(Boolean).join(' / ') || '-'}</td>
                         <td className="p-3 text-[var(--muted)]">{item.visitDate}</td>
-                        <td className="p-3 text-[var(--muted)]">{item.idType || '-'} / {item.idLast4 || '-'} / {item.assets?.length ?? 0}</td>
+                        <td className="p-3 text-[var(--muted)]">{item.idType || '-'} / {item.assets?.length ?? 0} assets</td>
                         <td className="p-3 text-[var(--muted)]">{item.badge || '-'}</td>
                         <td className="p-3">
                           <span className="rounded bg-[#e9eef6] px-2.5 py-1 text-xs font-semibold text-[var(--royal-blue)]">

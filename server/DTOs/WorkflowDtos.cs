@@ -9,7 +9,6 @@ public sealed class WorkflowActionDto
     public string? Reason { get; init; }
     public Guid? VisitDayId { get; init; }
     public string? BadgeNumber { get; init; }
-    public string? IdLast4 { get; init; }
     public string? IdType { get; init; }
     public string? AssetSerials { get; init; }
     public string? NewUserId { get; init; }

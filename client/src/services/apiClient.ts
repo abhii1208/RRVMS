@@ -133,7 +133,6 @@ export type FormVersionItem = {
   company: string
   designation: string
   idType: string
-  idLast4: string
   assets: string
   createdAt: string
 }
@@ -156,6 +155,7 @@ export type VisitorRequestDetail = {
     id?: string
     fullName: string
     companyName: string
+    companyAddress: string
     citizenship: string
     nationality: string
     country: string
@@ -163,12 +163,10 @@ export type VisitorRequestDetail = {
     email: string
     phone: string
     idType: string
-    idLast4: string
     visitorType: string
   }
   purpose: string
   areasToVisit?: string
-  visitingCompany: string
   visitingSite: string
   visitPurposeType: string
   mainHostName?: string
@@ -195,7 +193,8 @@ export type VisitorRequestDetail = {
 
 export type CreateVisitorRequest = {
   visitorType: 'Internal' | 'External'
-  visitingCompany: string
+  faculty: boolean
+  gtr: boolean
   visitingSite: string
   areasToVisit: string
   siteTimezone: string
@@ -260,7 +259,6 @@ export type ReceptionVisitor = {
   idClassification?: string | null
   approvalStatus: string
   idType?: string
-  idLast4?: string
   badge?: string | null
   assets?: Array<{ id: string; assetType: string; description: string; serialNumber: string; verificationStatus: string }>
 }
@@ -303,7 +301,6 @@ export type WorkflowAction = {
   reason?: string
   visitDayId?: string
   badgeNumber?: string
-  idLast4?: string
   idType?: string
   assetSerials?: string
   dpsPerformer?: string
@@ -353,12 +350,12 @@ export type VisitorForm = {
   country: string
   designation: string
   companyName: string
+  companyAddress: string
   officeCity: string
   officeCountry: string
   telephone: string
   email: string
   idType: string
-  idLast4: string
   assets: Array<{ assetType: string; description: string; serialNumber: string }>
 }
 export type SubmitVisitorForm = Omit<VisitorForm, 'id' | 'visitorRequestId' | 'requestNumber' | 'status'>

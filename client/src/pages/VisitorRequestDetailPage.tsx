@@ -27,7 +27,6 @@ export function VisitorRequestDetailPage() {
   const [infoComment, setInfoComment] = useState("Please confirm the visitor's full legal name and designation as shown on the identity document.")
   const [rejectReason, setRejectReason] = useState('Insufficient identity verification documentation provided.')
   const [verifyIdType, setVerifyIdType] = useState('Passport')
-  const [verifyIdLast4, setVerifyIdLast4] = useState('4821')
   const [badgeNumber, setBadgeNumber] = useState('B-101')
   const [holdComment, setHoldComment] = useState('Undeclared asset detected during reception screening.')
 
@@ -37,7 +36,6 @@ export function VisitorRequestDetailPage() {
       setRequest(data)
       setIdClassification(data.idClassification || 'Visitor')
       setVerifyIdType(data.visitor.idType || 'Passport')
-      setVerifyIdLast4(data.visitor.idLast4 || '4821')
       setError('')
     } catch (reason) {
       setError(userFacingApiError(reason, 'Request details could not be loaded.'))
@@ -104,7 +102,7 @@ export function VisitorRequestDetailPage() {
     if (!visitDayId) return
     setActing(true)
     try {
-      setRequest(await executeVisitorRequestAction(id, { action: 'verify', visitDayId, idType: verifyIdType, idLast4: verifyIdLast4 }))
+      setRequest(await executeVisitorRequestAction(id, { action: 'verify', visitDayId, idType: verifyIdType }))
       setShowVerifyModal(false)
       setError('')
     } catch (reason) {
@@ -247,7 +245,7 @@ export function VisitorRequestDetailPage() {
         <Info title="Request Details">
           <Field label="Batch ID" value={request.batchId} strong />
           <Field label="Request Number" value={request.requestNumber} />
-          <Field label="Visiting Company" value={request.visitingCompany} />
+          <Field label="Visiting Company" value={request.visitor.companyName} />
           <Field label="Visiting Site" value={request.visitingSite} />
           <Field label="Visit Date(s)" value={request.visitDays.map(d => d.visitDate).join(', ')} />
           <Field label="Purpose Type" value={request.visitPurposeType} />
@@ -263,13 +261,13 @@ export function VisitorRequestDetailPage() {
         <Info title="Visitor Information">
           <Field label="Full Legal Name" value={request.visitor.fullName} />
           <Field label="Company" value={request.visitor.companyName} />
+          <Field label="Visiting company address" value={request.visitor.companyAddress} />
           <Field label="Visitor Type" value={request.visitor.visitorType} />
           <Field label="Citizenship" value={request.visitor.citizenship} />
           <Field label="Nationality" value={request.visitor.nationality} />
           <Field label="Country of Residence" value={request.visitor.country} />
           <Field label="Designation / Position" value={request.visitor.designation} />
           <Field label="ID Type" value={request.visitor.idType} />
-          <Field label="ID Last 4 Digits" value={request.visitor.idLast4} />
           <Field label="Email" value={request.visitor.email} />
           <Field label="Phone" value={request.visitor.phone} />
         </Info>
@@ -377,7 +375,6 @@ export function VisitorRequestDetailPage() {
       {showVerifyModal && (
         <Modal title="Verify Visitor Identity & Assets">
           <Input label="ID Type" value={verifyIdType} onChange={setVerifyIdType} />
-          <Input label="ID Last 4 Digits" value={verifyIdLast4} onChange={value => setVerifyIdLast4(value.replace(/\D/g, '').slice(0, 4))} maxLength={4} />
           <ModalActions onCancel={() => setShowVerifyModal(false)}>
             <button disabled={acting} type="button" onClick={() => void handleVerify()} className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Confirm Verification</button>
           </ModalActions>

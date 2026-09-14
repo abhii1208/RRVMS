@@ -41,7 +41,7 @@ public sealed class AnalyticsController(RrvmsDbContext db, ICurrentUserService c
 
     private async Task<List<AnalyticsRow>> ReadRows(CancellationToken cancellationToken)
     {
-        var source = await db.VisitorRequests.AsNoTracking().Include(request => request.Visitor).Include(request => request.VisitDays).SelectMany(request => request.VisitDays.DefaultIfEmpty(), (request, day) => new { request.RequestNumber, Visitor = request.Visitor.FullName, Company = request.VisitingCompany, VisitDate = day == null ? (DateOnly?)null : day.VisitDate, Status = request.Status.ToString(), request.CreatedAt }).ToListAsync(cancellationToken);
+        var source = await db.VisitorRequests.AsNoTracking().Include(request => request.Visitor).Include(request => request.VisitDays).SelectMany(request => request.VisitDays.DefaultIfEmpty(), (request, day) => new { request.RequestNumber, Visitor = request.Visitor.FullName, Company = request.Visitor.CompanyName, VisitDate = day == null ? (DateOnly?)null : day.VisitDate, Status = request.Status.ToString(), request.CreatedAt }).ToListAsync(cancellationToken);
         return source.Select(row => new AnalyticsRow(row.RequestNumber, row.Visitor, row.Company, row.VisitDate?.ToString("yyyy-MM-dd") ?? string.Empty, row.Status, row.CreatedAt.ToString("O"))).ToList();
     }
     private static string Escape(string value) => $"\"{value.Replace("\"", "\"\"")}\"";

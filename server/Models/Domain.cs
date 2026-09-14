@@ -85,7 +85,6 @@ public sealed class Visitor
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string IdType { get; set; } = string.Empty;
-    public string IdLast4 { get; set; } = string.Empty;
     public VisitorType VisitorType { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -119,7 +118,6 @@ public sealed class VisitorRequest
     public VisitorType VisitorType { get; set; }
     public bool Faculty { get; set; }
     public bool Gtr { get; set; }
-    public string VisitingCompany { get; set; } = string.Empty;
     public string VisitingSite { get; set; } = string.Empty;
     public string VisitPurposeType { get; set; } = string.Empty; // Technical, Non-Technical, Other
     public string Purpose { get; set; } = string.Empty;
@@ -321,7 +319,6 @@ public sealed class VisitorForm
     public string Telephone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string IdType { get; set; } = string.Empty;
-    public string IdLast4 { get; set; } = string.Empty;
     public string DeclaredAssets { get; set; } = string.Empty;
     
     // STATUS TRACKING
@@ -352,7 +349,6 @@ public sealed class VisitorFormVersion
     public string PhoneSnapshot { get; set; } = string.Empty;
     public string EmailSnapshot { get; set; } = string.Empty;
     public string IdTypeSnapshot { get; set; } = string.Empty;
-    public string IdLast4Snapshot { get; set; } = string.Empty;
     public string AssetsSnapshot { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
 }

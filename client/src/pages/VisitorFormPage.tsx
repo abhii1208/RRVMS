@@ -12,12 +12,12 @@ const blankSubmission: SubmitVisitorForm = {
   country: '',
   designation: '',
   companyName: '',
+  companyAddress: '',
   officeCity: '',
   officeCountry: '',
   telephone: '',
   email: '',
   idType: 'Passport',
-  idLast4: '',
   assets: [],
 }
 
@@ -46,12 +46,12 @@ export function VisitorFormPage() {
           country: result.country,
           designation: result.designation,
           companyName: result.companyName,
+          companyAddress: result.companyAddress,
           officeCity: result.officeCity,
           officeCountry: result.officeCountry,
           telephone: result.telephone,
           email: result.email,
           idType: result.idType || 'Passport',
-          idLast4: result.idLast4,
           assets: result.assets,
         })
       })
@@ -72,7 +72,7 @@ export function VisitorFormPage() {
     if (!form.citizenship) errors.citizenship = 'Citizenship is required.'
     if (!form.nationality) errors.nationality = 'Nationality is required.'
     if (!form.officeCountry) errors.officeCountry = 'Office country is required.'
-    if (!/^\d{4}$/.test(form.idLast4)) errors.idLast4 = 'ID last 4 must contain exactly four numeric digits.'
+    if (!form.idType) errors.idType = 'ID type is required.'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -117,16 +117,15 @@ export function VisitorFormPage() {
         <Select label="Country of visitor" error={fieldErrors.country} value={form.country} onChange={value => update('country', value)} />
         <Field label="Designation / position held" value={form.designation} onChange={value => update('designation', value)} />
         <Field label="Visiting company" value={form.companyName} onChange={value => update('companyName', value)} required />
+        <Field label="Visiting company address" value={form.companyAddress} onChange={value => update('companyAddress', value)} required />
         <Field label="Office city" value={form.officeCity} onChange={value => update('officeCity', value)} />
         <Select label="Office country" error={fieldErrors.officeCountry} value={form.officeCountry} onChange={value => update('officeCountry', value)} />
-        <Field label="Phone" value={form.telephone} onChange={value => update('telephone', value)} required />
-        <Field label="Email" type="email" value={form.email} onChange={value => update('email', value)} required />
+        <Field label="Phone" value={form.telephone} onChange={value => update('telephone', value)} />
+        <Field label="Email" type="email" value={form.email} onChange={value => update('email', value)} />
       </section>
 
-      {/* Identity document section: SINGLE SELECT ID TYPE + SINGLE 4-DIGIT LAST 4 INPUT ONLY */}
       <section className="grid gap-4 border border-[var(--silver)] bg-white p-6 sm:grid-cols-2">
-        <Select label="ID type" value={form.idType} onChange={value => update('idType', value)} options={['Passport', 'Visa', 'Government ID', 'Other Valid ID']} />
-        <Field label="ID last 4 digits" error={fieldErrors.idLast4} value={form.idLast4} onChange={value => update('idLast4', value.replace(/\D/g, '').slice(0, 4))} required />
+        <Select label="ID type" error={fieldErrors.idType} value={form.idType} onChange={value => update('idType', value)} options={['Passport', 'Visa', 'Government ID', 'Other Valid ID']} />
       </section>
 
       <section className="border border-[var(--silver)] bg-white p-6">

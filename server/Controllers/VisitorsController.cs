@@ -41,7 +41,6 @@ public sealed class VisitorsController(RrvmsDbContext dbContext) : ControllerBas
             email = visitor.Email,
             phone = visitor.Phone,
             idType = visitor.IdType,
-            idLast4 = visitor.IdLast4,
             visitorType = visitor.VisitorType.ToString(),
             previousRequests,
             previousVisitDays

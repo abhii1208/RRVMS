@@ -560,6 +560,9 @@ namespace RRVMS.Api.Migrations
 
                     b.HasIndex("VisitorRequestId");
 
+                    b.HasIndex("VisitorRequestId", "VisitDate")
+                        .IsUnique();
+
                     b.ToTable("VisitDays");
                 });
 
@@ -593,10 +596,6 @@ namespace RRVMS.Api.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("IdLast4")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -670,10 +669,6 @@ namespace RRVMS.Api.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("IdLast4")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -756,10 +751,6 @@ namespace RRVMS.Api.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("FullNameSnapshot")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("IdLast4Snapshot")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -892,10 +883,6 @@ namespace RRVMS.Api.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("VisitPurposeType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("VisitingCompany")
                         .IsRequired()
                         .HasColumnType("text");
 

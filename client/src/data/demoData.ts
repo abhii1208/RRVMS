@@ -52,7 +52,6 @@ const receptionItems: ReceptionVisitor[] = demoItems.slice(0, 6).map((item, inde
   idClassification: index % 2 === 0 ? 'Visitor' : 'Vendor',
   approvalStatus: index === 2 ? 'RECEPTION_HOLD' : 'APPROVED',
   idType: index % 2 === 0 ? 'Passport' : 'National ID',
-  idLast4: `${4821 + index}`.slice(-4),
   badge: index < 2 ? `BADGE-DEMO-${index + 1}` : null,
   assets: [{ id: `demo-asset-${index}`, assetType: index % 2 === 0 ? 'Laptop' : 'Tablet', description: 'Synthetic declared equipment', serialNumber: `ASSET-DEMO-${index + 1}`, verificationStatus: 'Verified' }],
 }))

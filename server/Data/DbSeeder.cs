@@ -20,7 +20,7 @@ public static class DbSeeder
                 {
                     Id = Guid.NewGuid(),
                     VisitorRequestId = req.Id,
-                    CompanyName = req.VisitingCompany ?? "Visitor Company",
+                    CompanyName = "Visitor Company",
                     VisitorType = req.VisitorType,
                     CreatedAt = req.CreatedAt,
                     UpdatedAt = nowUtc
@@ -133,7 +133,6 @@ public static class DbSeeder
                 Email = "adam.gilchrist.demo@example.com",
                 Phone = "+61 400 000 000",
                 IdType = "Passport",
-                IdLast4 = "4821",
                 VisitorType = VisitorType.External,
                 CreatedAt = now.AddDays(-30),
                 UpdatedAt = now
@@ -157,7 +156,6 @@ public static class DbSeeder
                 MainHostId = hostUser.Id,
                 EscortingHostId = escortUser.Id,
                 VisitorType = VisitorType.External,
-                VisitingCompany = "Demo Aerospace Engineering Ltd.",
                 VisitingSite = "Rolls-Royce Demo Facility",
                 VisitPurposeType = "Technical",
                 Purpose = "Initial technical consultation on engine design specifications",
@@ -226,7 +224,6 @@ public static class DbSeeder
             MainHostId = hostUser.Id,
             EscortingHostId = escortUser.Id,
             VisitorType = VisitorType.External,
-            VisitingCompany = "Demo Aerospace Engineering Ltd.",
             VisitingSite = "Rolls-Royce Demo Facility",
             VisitPurposeType = "Technical",
             Purpose = "Advanced propulsion systems design review & technical consultation",
@@ -305,7 +302,6 @@ public static class DbSeeder
             Telephone = "+61 400 000 000",
             Email = "adam.gilchrist.demo@example.com",
             IdType = "Passport",
-            IdLast4 = "4821",
             DeclaredAssets = "Laptop (DEMO-LAP-001), External Drive (DEMO-DRV-001)",
             Status = "SUBMITTED",
             SubmittedAt = now.AddHours(-5),
@@ -333,7 +329,6 @@ public static class DbSeeder
             PhoneSnapshot = "+61 400 000 000",
             EmailSnapshot = "adam.gilchrist.demo@example.com",
             IdTypeSnapshot = "Passport",
-            IdLast4Snapshot = "4821",
             AssetsSnapshot = "[{\"AssetType\":\"Laptop\",\"Description\":\"Dell Precision Workstation\",\"SerialNumber\":\"DEMO-LAP-001\"},{\"AssetType\":\"External Drive\",\"Description\":\"Encrypted SSD 1TB\",\"SerialNumber\":\"DEMO-DRV-001\"}]",
             CreatedAt = now.AddHours(-5)
         };
