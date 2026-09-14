@@ -24,4 +24,7 @@ services:
         sync: false
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      # Server-side specimen records remain opt-in; frontend fallback is safe and local.
+      - key: DEMO_DATA_ENABLED
+        value: "false"
       # PORT is injected by Render automatically; no need to set it.

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getNotifications, getReceptionDashboard, listVisitorRequests, markNotificationRead, type NotificationItem, type ReceptionDashboardResponse, type VisitorRequestListItem } from '../services/apiClient'
 import { userFacingApiError } from '../utils/logger'
 import { formatStatus } from '../utils/formatters'
+import { demoReceptionDashboard } from '../data/demoData'
 
 export function PendingActionsPage() {
   const [items, setItems] = useState<VisitorRequestListItem[]>([])
@@ -20,17 +21,18 @@ export function PendingActionsPage() {
 }
 
 export function ReceptionPage() {
-  const [dashboard, setDashboard] = useState<ReceptionDashboardResponse | null>(null)
+  const [dashboard, setDashboard] = useState<ReceptionDashboardResponse>(demoReceptionDashboard)
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [usingDemoData, setUsingDemoData] = useState(true)
 
   const load = () => {
     setLoading(true)
     setError('')
     getReceptionDashboard()
-      .then(setDashboard)
-      .catch(reason => setError(userFacingApiError(reason, 'Reception dashboard data could not be loaded.')))
+      .then(data => { setDashboard(data); setUsingDemoData(false) })
+      .catch(reason => { setUsingDemoData(true); setError(userFacingApiError(reason, 'Reception dashboard data could not be loaded.')) })
       .finally(() => setLoading(false))
   }
 
@@ -50,6 +52,7 @@ export function ReceptionPage() {
         <p className="mt-2 text-sm text-[var(--muted)]">Verify visitor identities, issue badges, and manage check-in/check-out.</p>
       </header>
 
+      <div className={usingDemoData ? 'status-banner' : 'status-banner status-live'} role="status"><span>{usingDemoData ? 'Live API unavailable - showing DEMO DATA.' : 'LIVE DATA'}</span><button type="button" onClick={load}>Retry</button></div>
       {error && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-[#e1b5b5] bg-[#fff4f4] p-4 text-sm text-[#9b2c2c]">
           <span>{error}</span>
