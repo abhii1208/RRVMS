@@ -76,6 +76,10 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<RrvmsDbContext>();
     try
     {
+        var pendingMigrations = (await dbContext.Database.GetPendingMigrationsAsync()).ToArray();
+        Console.WriteLine(pendingMigrations.Length == 0
+            ? "No pending EF Core database migrations."
+            : $"Pending EF Core migrations: {string.Join(", ", pendingMigrations)}");
         Console.WriteLine("Applying EF Core database migrations...");
         await dbContext.Database.MigrateAsync();
         Console.WriteLine("Database migrations completed.");

@@ -31,28 +31,11 @@ namespace RRVMS.Api.Migrations
                 nullable: false,
                 defaultValue: "");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Comments_AuthorUserId",
-                table: "Comments",
-                column: "AuthorUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AdditionalInformationRequests_RequestedByUserId",
-                table: "AdditionalInformationRequests",
-                column: "RequestedByUserId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Comments_AuthorUserId",
-                table: "Comments");
-
-            migrationBuilder.DropIndex(
-                name: "IX_AdditionalInformationRequests_RequestedByUserId",
-                table: "AdditionalInformationRequests");
-
             migrationBuilder.DropColumn(
                 name: "Faculty",
                 table: "VisitorRequests");
