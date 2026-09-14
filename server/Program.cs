@@ -163,6 +163,7 @@ static string NormalizeDatabaseUrl(string databaseUrl)
         Database = database,
         Username = Uri.UnescapeDataString(userInfo[0]),
         Password = Uri.UnescapeDataString(userInfo[1]),
+        GssEncryptionMode = GssEncryptionMode.Disable,
         SslMode = SslMode.Require,
     };
 
@@ -177,7 +178,12 @@ static string NormalizeDatabaseUrl(string databaseUrl)
 static string? NormalizeNpgsqlConnectionString(string? connectionString)
 {
     if (string.IsNullOrWhiteSpace(connectionString)) return connectionString;
-    return new NpgsqlConnectionStringBuilder(connectionString).ConnectionString;
+    var builder = new NpgsqlConnectionStringBuilder(connectionString)
+    {
+        GssEncryptionMode = GssEncryptionMode.Disable,
+        SslMode = SslMode.Require,
+    };
+    return builder.ConnectionString;
 }
 
 static void LoadLocalEnvironmentFile()
