@@ -71,11 +71,22 @@ builder.Services.AddCors(options => options.AddPolicy("Client", policy => policy
 
 var app = builder.Build();
 
-// Seed development / demo data idempotently
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<RrvmsDbContext>();
+    try
+    {
+        Console.WriteLine("Applying EF Core database migrations...");
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("Database migrations completed.");
+    }
+    catch (Exception exception)
+    {
+        throw new InvalidOperationException("Database migrations failed. DbSeeder was not run.", exception);
+    }
+
     await DbSeeder.SeedAsync(dbContext, app.Environment);
+    Console.WriteLine("Database seeding completed.");
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
