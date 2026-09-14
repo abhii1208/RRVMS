@@ -6,12 +6,15 @@ using RRVMS.Api.Services;
 
 LoadLocalEnvironmentFile();
 
+
+
 // MIGRATION MODE: If --migrate argument is provided, run migrations and exit
 if (args.Contains("--migrate"))
 {
     await RunMigrationsAndExit();
     return;
 }
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -197,3 +200,4 @@ static void LoadLocalEnvironmentFile()
         }
     }
 }
+

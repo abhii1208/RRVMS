@@ -22,7 +22,7 @@ export function BaseLayout() {
         </div>
       </nav>
       <main className="mx-auto max-w-7xl px-6 py-10"><Outlet /></main>
-      <footer className="border-t border-[var(--silver)] bg-[var(--white)] px-6 py-5 text-center text-xs text-[var(--muted)]">Rolls-Royce Visitor Management System</footer>
+      <footer className="border-t border-[var(--silver)] bg-[var(--white)] px-6 py-5 text-center text-xs text-[var(--muted)]">RRVMS - Visitor Management System</footer>
     </div>
   )
 }

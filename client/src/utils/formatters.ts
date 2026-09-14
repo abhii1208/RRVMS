@@ -7,6 +7,7 @@ export function formatStatus(status?: string): string {
     HOST_REVIEW: 'Host Review',
     HOST_DPS: 'Host DPS',
     EC_DPS: 'EC DPS',
+    PENDING_EC_REVIEW: 'Pending EC Review',
     EC_REVIEW: 'EC Review',
     PENDING_DOCUMENTATION: 'Pending Documentation',
     DOCUMENTATION_SUBMITTED: 'Documentation Submitted',
@@ -39,4 +40,3 @@ export function formatRole(role?: string): string {
   if (map[role]) return map[role]
   return role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
-

@@ -8,6 +8,7 @@ public static class WorkflowStatus
     public const string HostFinalSubmitted = nameof(RequestStatus.HOST_FINAL_SUBMITTED);
     public const string HostDps = nameof(RequestStatus.HOST_DPS);
     public const string EcDps = nameof(RequestStatus.EC_DPS);
+    public const string PendingEcReview = nameof(RequestStatus.PENDING_EC_REVIEW);
     public const string EcReview = nameof(RequestStatus.EC_REVIEW);
     public const string PendingDocumentation = nameof(RequestStatus.PENDING_DOCUMENTATION);
     public const string DocumentationSubmitted = nameof(RequestStatus.DOCUMENTATION_SUBMITTED);

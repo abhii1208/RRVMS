@@ -32,7 +32,7 @@ public sealed class RrvmsDbContext(DbContextOptions<RrvmsDbContext> options) : D
         modelBuilder.Entity<Visitor>().HasIndex(visitor => visitor.CompanyName);
         modelBuilder.Entity<Visitor>().HasIndex(visitor => visitor.VisitorRequestId);
         modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.RequestNumber).IsUnique();
-        modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.BatchId);
+        modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.BatchId).IsUnique();
         modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.Status);
         modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.MainHostId);
         modelBuilder.Entity<VisitorRequest>().HasIndex(request => request.VisitorId);

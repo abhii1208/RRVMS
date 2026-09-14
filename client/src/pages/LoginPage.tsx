@@ -28,8 +28,8 @@ export function LoginPage() {
         <div className="p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--royal-blue)]">Sign in</p>
           <h2 className="display mt-2 text-2xl font-bold text-[var(--royal-blue)]">Welcome to RRVMS</h2>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Use your Rolls-Royce account to access visitor operations.</p>
-          {!showUsers ? <Button type="button" onClick={() => setShowUsers(true)} className="mt-7 w-full">Sign in with Rolls-Royce SSO <span className="ml-2">-&gt;</span></Button> : <div className="mt-7">
+          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Use your account to access visitor operations.</p>
+          {!showUsers ? <Button type="button" onClick={() => setShowUsers(true)} className="mt-7 w-full">Sign in to RRVMS <span className="ml-2">-&gt;</span></Button> : <div className="mt-7">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">Continue with prototype user</p>
             <div className="mt-3 space-y-2">
               {mockUsers.map((user) => <button key={user.id} type="button" onClick={() => signIn(user)} className="flex w-full items-center justify-between border border-[var(--silver)] px-4 py-3 text-left hover:bg-[var(--surface)]"><span><span className="block text-sm font-semibold text-[var(--ink)]">{user.name}</span><span className="block text-xs text-[var(--muted)]">{user.role}</span></span><span className="text-xs text-[var(--royal-blue)]">Select -&gt;</span></button>)}

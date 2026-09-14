@@ -62,6 +62,19 @@ public sealed class VisitorRequestsController(IVisitorRequestService service, IC
         }
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateDraft(Guid id, CreateVisitorRequestDto input, CancellationToken cancellationToken)
+    {
+        if (!currentUserService.IsAuthenticated) return Unauthorized();
+        try
+        {
+            var result = await service.UpdateDraftAsync(id, input, currentUserService.UserId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException exception) { return NotFound(new { error = exception.Message }); }
+        catch (ArgumentException exception) { return BadRequest(new { error = exception.Message }); }
+    }
+
     [HttpPost("{id:guid}/actions")]
     public async Task<IActionResult> Action(Guid id, WorkflowActionDto input, CancellationToken cancellationToken)
     {
@@ -87,7 +100,8 @@ public sealed class VisitorRequestsController(IVisitorRequestService service, IC
             {
                 Action = "ec-request-documents",
                 Reason = input.RequestedInformation ?? input.Comment,
-                Comment = input.Comment ?? input.RequestedInformation
+                Comment = input.Comment ?? input.RequestedInformation,
+                IdClassification = input.IdClassification
             };
             var result = await service.ExecuteActionAsync(id, workflowAction, currentUserService.UserId, currentUserService.Role, cancellationToken);
             return Ok(result);
@@ -107,7 +121,8 @@ public sealed class VisitorRequestsController(IVisitorRequestService service, IC
             var workflowAction = new WorkflowActionDto
             {
                 Action = "ec-approve",
-                Comment = input?.Comment
+                Comment = input?.Comment,
+                IdClassification = input?.IdClassification
             };
             var result = await service.ExecuteActionAsync(id, workflowAction, currentUserService.UserId, currentUserService.Role, cancellationToken);
             return Ok(result);
@@ -128,7 +143,8 @@ public sealed class VisitorRequestsController(IVisitorRequestService service, IC
             {
                 Action = "ec-reject",
                 Reason = input.Reason ?? input.Comment ?? "Rejected by Export Control",
-                Comment = input.Comment ?? input.Reason
+                Comment = input.Comment ?? input.Reason,
+                IdClassification = input.IdClassification
             };
             var result = await service.ExecuteActionAsync(id, workflowAction, currentUserService.UserId, currentUserService.Role, cancellationToken);
             return Ok(result);
@@ -144,10 +160,12 @@ public sealed class EcRequestInformationInput
 {
     public string? RequestedInformation { get; set; }
     public string? Comment { get; set; }
+    public string? IdClassification { get; set; }
 }
 
 public sealed class EcDecisionInput
 {
     public string? Comment { get; set; }
     public string? Reason { get; set; }
+    public string? IdClassification { get; set; }
 }

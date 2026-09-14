@@ -2,8 +2,15 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { ecApprove, ecReject, ecRequestInformation, executeVisitorRequestAction, getVisitorRequest, updateAttendance, type VisitorRequestDetail } from '../services/apiClient'
-import { userFacingApiError } from '../utils/logger'
 import { formatStatus } from '../utils/formatters'
+import { userFacingApiError } from '../utils/logger'
+
+const ecReviewStatuses = ['PENDING_EC_REVIEW', 'EC_REVIEW', 'DOCUMENTATION_SUBMITTED', 'EC_RE_REVIEW_REQUIRED', 'EC_DPS', 'RECEPTION_HOLD']
+const idClassificationOptions = [
+  { value: 'Vendor', label: 'Vendor', swatch: 'bg-[#f28c28]' },
+  { value: 'Visitor', label: 'Visitor', swatch: 'bg-[#6f7f8f]' },
+  { value: 'GtrRedTag', label: 'GTR — Red Tag', swatch: 'bg-[#c62828]' },
+]
 
 export function VisitorRequestDetailPage() {
   const { id = '' } = useParams()
@@ -16,8 +23,8 @@ export function VisitorRequestDetailPage() {
   const [showVerifyModal, setShowVerifyModal] = useState(false)
   const [showCheckInModal, setShowCheckInModal] = useState(false)
   const [showHoldModal, setShowHoldModal] = useState(false)
-
-  const [infoComment, setInfoComment] = useState('Please confirm the visitor\'s full legal name and designation as shown on the identity document.')
+  const [idClassification, setIdClassification] = useState('Visitor')
+  const [infoComment, setInfoComment] = useState("Please confirm the visitor's full legal name and designation as shown on the identity document.")
   const [rejectReason, setRejectReason] = useState('Insufficient identity verification documentation provided.')
   const [verifyIdType, setVerifyIdType] = useState('Passport')
   const [verifyIdLast4, setVerifyIdLast4] = useState('4821')
@@ -28,6 +35,7 @@ export function VisitorRequestDetailPage() {
     try {
       const data = await getVisitorRequest(id)
       setRequest(data)
+      setIdClassification(data.idClassification || 'Visitor')
       setVerifyIdType(data.visitor.idType || 'Passport')
       setVerifyIdLast4(data.visitor.idLast4 || '4821')
       setError('')
@@ -54,7 +62,7 @@ export function VisitorRequestDetailPage() {
   const handleApprove = async () => {
     setActing(true)
     try {
-      setRequest(await ecApprove(id, 'Approved by Export Control'))
+      setRequest(await ecApprove(id, 'Approved by Export Control', idClassification))
       setError('')
     } catch (reason) {
       setError(userFacingApiError(reason, 'Could not approve visitor request.'))
@@ -67,7 +75,7 @@ export function VisitorRequestDetailPage() {
     if (!infoComment.trim()) return
     setActing(true)
     try {
-      setRequest(await ecRequestInformation(id, infoComment.trim()))
+      setRequest(await ecRequestInformation(id, infoComment.trim(), idClassification))
       setShowInfoModal(false)
       setError('')
     } catch (reason) {
@@ -81,7 +89,7 @@ export function VisitorRequestDetailPage() {
     if (!rejectReason.trim()) return
     setActing(true)
     try {
-      setRequest(await ecReject(id, rejectReason.trim()))
+      setRequest(await ecReject(id, rejectReason.trim(), idClassification))
       setShowRejectModal(false)
       setError('')
     } catch (reason) {
@@ -124,15 +132,7 @@ export function VisitorRequestDetailPage() {
   const handleCheckOut = async () => {
     const visitDayId = request?.visitDays[0]?.id
     if (!visitDayId) return
-    setActing(true)
-    try {
-      setRequest(await executeVisitorRequestAction(id, { action: 'check-out', visitDayId }))
-      setError('')
-    } catch (reason) {
-      setError(userFacingApiError(reason, 'Check-out failed.'))
-    } finally {
-      setActing(false)
-    }
+    await action('check-out', { visitDayId })
   }
 
   const handleHold = async () => {
@@ -153,15 +153,7 @@ export function VisitorRequestDetailPage() {
   const handleNoShow = async () => {
     const visitDayId = request?.visitDays[0]?.id
     if (!visitDayId) return
-    setActing(true)
-    try {
-      setRequest(await executeVisitorRequestAction(id, { action: 'no-show', visitDayId }))
-      setError('')
-    } catch (reason) {
-      setError(userFacingApiError(reason, 'Could not mark no-show.'))
-    } finally {
-      setActing(false)
-    }
+    await action('no-show', { visitDayId })
   }
 
   const handleAttendanceToggle = async (category: string, currentCompleted: boolean) => {
@@ -181,7 +173,6 @@ export function VisitorRequestDetailPage() {
   const isHost = user?.role === 'HOST_REQUESTER'
   const isReception = user?.role === 'RECEPTION'
   const activeDay = request.visitDays[0]
-
   const fcRecord = request.attendance?.find(a => a.category === 'FACILITIES_CONTRACTOR')
   const gtreRecord = request.attendance?.find(a => a.category === 'GAS_TURBINE_RESEARCH_ESTABLISHMENT')
 
@@ -191,573 +182,238 @@ export function VisitorRequestDetailPage() {
 
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--royal-blue)]">Request detail</p>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="display text-4xl font-bold text-[var(--royal-blue)]">{request.requestNumber}</h1>
-          <span className="rounded border border-[var(--silver)] bg-[#e9eef6] px-3.5 py-1.5 text-sm font-bold text-[var(--royal-blue)]">
-            Batch ID: {request.batchId}
-          </span>
+        <div className="mt-1 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="display text-3xl font-bold text-[var(--royal-blue)]">{request.visitor.fullName || 'Visitor form pending'}</h1>
+            <p className="mt-2 text-sm text-[var(--muted)]">{request.requestNumber} | {request.batchId}</p>
+          </div>
+          <span className="rounded bg-[#e9eef6] px-3 py-1 text-sm font-semibold text-[var(--royal-blue)]">{formatStatus(request.currentStatus)}</span>
         </div>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          {request.visitor.fullName || 'Visitor form pending'} — <span className="font-semibold text-[var(--royal-blue)]">{formatStatus(request.currentStatus)}</span>
-        </p>
       </header>
 
-      {/* EC ACTIONS BAR */}
-      {isEc && ['EC_REVIEW', 'DOCUMENTATION_SUBMITTED', 'EC_RE_REVIEW_REQUIRED'].includes(request.currentStatus) && (
-        <section className="flex flex-wrap items-center gap-3 border border-[var(--royal-blue)] bg-[#f4f7fb] p-5">
-          <p className="mr-3 text-sm font-bold text-[var(--royal-blue)]">EC Actions:</p>
-          <button
-            disabled={acting}
-            type="button"
-            onClick={() => void handleApprove()}
-            className="cursor-pointer rounded bg-[#28a745] px-4 py-2 text-sm font-semibold text-white hover:bg-[#218838] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Approve Request
-          </button>
-          <button
-            disabled={acting}
-            type="button"
-            onClick={() => setShowInfoModal(true)}
-            className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--rr-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Request Additional Information
-          </button>
-          <button
-            disabled={acting}
-            type="button"
-            onClick={() => setShowRejectModal(true)}
-            className="cursor-pointer rounded bg-[#dc3545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c82333] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Reject Request
-          </button>
+      {isEc && ecReviewStatuses.includes(request.currentStatus) && (
+        <section className="space-y-4 border border-[var(--royal-blue)] bg-[#f4f7fb] p-5">
+          <div>
+            <h2 className="display text-xl font-bold text-[var(--royal-blue)]">EC Review</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">Select one ID classification before completing the review.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {idClassificationOptions.map(option => (
+              <label key={option.value} className="flex cursor-pointer items-center gap-3 border border-[var(--silver)] bg-white p-3 text-sm font-semibold text-[var(--ink)]">
+                <input type="radio" name="idClassification" value={option.value} checked={idClassification === option.value} onChange={() => setIdClassification(option.value)} />
+                <span className={`h-3 w-3 rounded-full ${option.swatch}`} />
+                {option.label}
+              </label>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button disabled={acting || !idClassification} type="button" onClick={() => void handleApprove()} className="cursor-pointer rounded bg-[#28a745] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">APPROVE</button>
+            <button disabled={acting || !idClassification} type="button" onClick={() => setShowInfoModal(true)} className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">REQUEST ADDITIONAL INFORMATION</button>
+            <button disabled={acting || !idClassification} type="button" onClick={() => setShowRejectModal(true)} className="cursor-pointer rounded bg-[#dc3545] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">REJECT</button>
+          </div>
         </section>
       )}
 
-      {/* RECEPTION ACTIONS BAR */}
       {isReception && (
         <section className="flex flex-wrap items-center gap-3 border border-[var(--royal-blue)] bg-[#e9eef6] p-5">
           <p className="mr-3 text-sm font-bold text-[var(--royal-blue)]">Reception Actions:</p>
-          {activeDay?.status === 'UPCOMING' && (
-            <button
-              disabled={acting || request.currentStatus !== 'APPROVED'}
-              type="button"
-              onClick={() => setShowVerifyModal(true)}
-              className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--rr-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Verify Identity & Assets
-            </button>
-          )}
-          {activeDay?.status === 'RECEPTION_VERIFICATION' && (
-            <button
-              disabled={acting}
-              type="button"
-              onClick={() => setShowCheckInModal(true)}
-              className="cursor-pointer rounded bg-[#28a745] px-4 py-2 text-sm font-semibold text-white hover:bg-[#218838] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Issue Badge & Check-In
-            </button>
-          )}
-          {activeDay?.status === 'CHECKED_IN' && (
-            <button
-              disabled={acting}
-              type="button"
-              onClick={() => void handleCheckOut()}
-              className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Check-Out Visitor
-            </button>
-          )}
+          {activeDay?.status === 'UPCOMING' && <ActionButton disabled={acting || request.currentStatus !== 'APPROVED'} onClick={() => setShowVerifyModal(true)}>Verify Identity &amp; Assets</ActionButton>}
+          {activeDay?.status === 'RECEPTION_VERIFICATION' && <ActionButton disabled={acting} onClick={() => setShowCheckInModal(true)} tone="success">Issue Badge &amp; Check-In</ActionButton>}
+          {activeDay?.status === 'CHECKED_IN' && <ActionButton disabled={acting} onClick={() => void handleCheckOut()}>Check-Out Visitor</ActionButton>}
           {request.currentStatus === 'APPROVED' && (
             <>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => setShowHoldModal(true)}
-                className="cursor-pointer rounded bg-[#ffc107] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e0a800] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Place on Hold
-              </button>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => void handleNoShow()}
-                className="cursor-pointer rounded border border-[var(--silver)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:bg-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Mark No-Show
-              </button>
+              <ActionButton disabled={acting} onClick={() => setShowHoldModal(true)} tone="warning">Place on Hold</ActionButton>
+              <button disabled={acting} type="button" onClick={() => void handleNoShow()} className="cursor-pointer rounded border border-[var(--silver)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-60">Mark No-Show</button>
             </>
           )}
         </section>
       )}
 
-      {/* HOST / OTHER ACTIONS */}
-      {isHost && (
-        <Actions role={user?.role ?? ''} status={request.currentStatus} acting={acting} onAction={action} />
-      )}
+      {isHost && <Actions role={user?.role ?? ''} status={request.currentStatus} acting={acting} onAction={action} />}
 
-      {/* VISITOR FORMS */}
-      <Info title="Visitor forms">
-        <div className="space-y-3">
-          {forms.map((form, index) => (
-            <div key={form.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--silver)] pb-3">
-              <span>
-                <strong>Visitor {index + 1}: </strong>
-                <span className="ml-2 text-[var(--ink)]">{form.fullName || 'Adam Gilchrist'}</span>
-              </span>
-              <span className="flex items-center gap-4">
-                <span className="rounded bg-[#e9eef6] px-2.5 py-1 text-xs font-semibold text-[var(--royal-blue)]">{form.status}</span>
-                <Link to={`/visitor-forms/${form.id}`} className="font-semibold text-[var(--royal-blue)] hover:underline cursor-pointer">
-                  Open Visitor Form
-                </Link>
-              </span>
-            </div>
-          ))}
-        </div>
-      </Info>
+      {!isReception && <Info title="Visitor Forms">
+        {forms.map((form, index) => (
+          <div key={form.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--silver)] pb-3">
+            <span><strong>Visitor {index + 1}:</strong> <span className="ml-2">{form.fullName || 'Visitor form pending'}</span></span>
+            <span className="flex items-center gap-4">
+              <span className="rounded bg-[#e9eef6] px-2.5 py-1 text-xs font-semibold text-[var(--royal-blue)]">{formatStatus(form.status)}</span>
+              <Link to={`/visitor-forms/${form.id}`} className="font-semibold text-[var(--royal-blue)] hover:underline">Open Visitor Form</Link>
+            </span>
+          </div>
+        ))}
+      </Info>}
 
-      {/* MAIN DETAILS GRID */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* REQUEST DETAILS */}
         <Info title="Request Details">
-          <p><strong>Batch ID:</strong> <span className="font-bold text-[var(--royal-blue)]">{request.batchId}</span></p>
-          <p><strong>Request Number:</strong> {request.requestNumber}</p>
-          <p><strong>Visitor Type:</strong> {request.visitor.visitorType || 'External'}</p>
-          <p><strong>Visiting Company:</strong> {request.visitingCompany || 'Demo Aerospace Engineering Ltd.'}</p>
-          <p><strong>Visiting Site:</strong> {request.visitingSite || 'Rolls-Royce Demo Facility'}</p>
-          <p><strong>Visit Date(s):</strong> {request.visitDays.map(d => d.visitDate).join(', ') || 'Today'}</p>
-          <p><strong>Purpose Type:</strong> {request.visitPurposeType || 'Technical'}</p>
-          <p><strong>Purpose Description:</strong> {request.purpose}</p>
-          <p><strong>Areas to Visit:</strong> {request.areasToVisit || 'Engine Research Area'}</p>
-          <p><strong>Main Host:</strong> {request.mainHostName || 'Alex Morgan'}</p>
-          <p><strong>Escorting Host:</strong> {request.escortingHostName || 'Sarah Jenkins'}</p>
+          <Field label="Batch ID" value={request.batchId} strong />
+          <Field label="Request Number" value={request.requestNumber} />
+          <Field label="Visiting Company" value={request.visitingCompany} />
+          <Field label="Visiting Site" value={request.visitingSite} />
+          <Field label="Visit Date(s)" value={request.visitDays.map(d => d.visitDate).join(', ')} />
+          <Field label="Purpose Type" value={request.visitPurposeType} />
+          <Field label="Purpose Description" value={request.purpose} />
+          <Field label="Areas to Visit" value={request.areasToVisit} />
+          <Field label="Main Host" value={request.mainHostName} />
+          <Field label="Escorting Host" value={request.escortingHostName} />
+          <Field label="Faculty" value={request.faculty ? 'Yes' : 'No'} />
+          <Field label="GTR" value={request.gtr ? 'Yes' : 'No'} />
+          <Field label="ID Classification" value={formatClassification(request.idClassification || idClassification)} />
         </Info>
 
-        {/* VISITOR DETAILS */}
         <Info title="Visitor Information">
-          <p><strong>Full Legal Name:</strong> {request.visitor.fullName || 'Adam Gilchrist'}</p>
-          <p><strong>Citizenship:</strong> {request.visitor.citizenship || 'Australian'}</p>
-          <p><strong>Nationality:</strong> {request.visitor.nationality || 'Australian'}</p>
-          <p><strong>Country of Residence:</strong> {request.visitor.country || 'Australia'}</p>
-          <p><strong>Designation / Position:</strong> {request.visitor.designation || 'Senior Technical Consultant'}</p>
-          <p><strong>ID Type:</strong> {request.visitor.idType || 'Passport'}</p>
-          <p><strong>ID Last 4 Digits:</strong> {request.visitor.idLast4 || '4821'}</p>
-          <p><strong>Email:</strong> {request.visitor.email || 'adam.gilchrist.demo@example.com'}</p>
-          <p><strong>Phone:</strong> {request.visitor.phone || '+61 400 000 000'}</p>
+          <Field label="Full Legal Name" value={request.visitor.fullName} />
+          <Field label="Company" value={request.visitor.companyName} />
+          <Field label="Visitor Type" value={request.visitor.visitorType} />
+          <Field label="Citizenship" value={request.visitor.citizenship} />
+          <Field label="Nationality" value={request.visitor.nationality} />
+          <Field label="Country of Residence" value={request.visitor.country} />
+          <Field label="Designation / Position" value={request.visitor.designation} />
+          <Field label="ID Type" value={request.visitor.idType} />
+          <Field label="ID Last 4 Digits" value={request.visitor.idLast4} />
+          <Field label="Email" value={request.visitor.email} />
+          <Field label="Phone" value={request.visitor.phone} />
         </Info>
 
-        {/* ASSETS */}
         <Info title="Declared Assets">
-          {request.assets.length ? (
-            <div className="space-y-2">
-              {request.assets.map((asset) => (
-                <div key={asset.id} className="border-b border-[var(--silver)] pb-2">
-                  <p><strong>{asset.assetType}:</strong> {asset.description || 'N/A'}</p>
-                  <p className="text-xs text-[var(--muted)]">Serial: {asset.serialNumber} | Verification: {asset.verificationStatus}</p>
-                </div>
-              ))}
+          {request.assets.length ? request.assets.map(asset => (
+            <div key={asset.id} className="border-b border-[var(--silver)] pb-2">
+              <p><strong>{asset.assetType}:</strong> {asset.description || 'N/A'}</p>
+              <p className="text-xs text-[var(--muted)]">Serial: {asset.serialNumber || 'N/A'} | Verification: {formatStatus(asset.verificationStatus)}</p>
             </div>
-          ) : (
-            <p>No declared assets.</p>
-          )}
+          )) : <p>No declared assets.</p>}
         </Info>
 
-        {/* DPS RECORD */}
-        <Info title="DPS Screening (DEMO DATA)">
-          {request.dpsHistory && request.dpsHistory.length > 0 ? (
-            <div className="space-y-2">
-              {request.dpsHistory.map((dps) => (
-                <div key={dps.id} className="space-y-1">
-                  <p>
-                    <strong>DPS Result:</strong>{' '}
-                    <span className={`font-bold ${dps.result === 'Flagged' || dps.result === 'FLAGGED' ? 'text-[#856404]' : 'text-green-700'}`}>
-                      {dps.result.toUpperCase()} (DEMO DATA)
-                    </span>
-                  </p>
-                  <p><strong>Status:</strong> {dps.status}</p>
-                  <p><strong>Performed By:</strong> {dps.performedBy}</p>
-                  <p><strong>Notes:</strong> {dps.notes}</p>
-                  {dps.performedAt && <p className="text-xs text-[var(--muted)]">Timestamp: {new Date(dps.performedAt).toLocaleString()}</p>}
-                </div>
-              ))}
+        {!isReception && <Info title="DPS Screening">
+          {request.dpsHistory?.length ? request.dpsHistory.map(dps => (
+            <div key={dps.id} className="space-y-1">
+              <Field label="DPS Result" value={formatStatus(dps.result)} />
+              <Field label="Status" value={formatStatus(dps.status)} />
+              <Field label="Performed By" value={formatStatus(dps.performedBy)} />
+              <Field label="Notes" value={dps.notes} />
+              {dps.performedAt && <p className="text-xs text-[var(--muted)]">Timestamp: {new Date(dps.performedAt).toLocaleString()}</p>}
             </div>
-          ) : (
-            <div>
-              <p><strong>DPS Result:</strong> <span className="font-bold text-[#856404]">FLAGGED (DEMO DATA)</span></p>
-              <p><strong>Notes:</strong> Demo screening result requiring EC review.</p>
-              <p><strong>Performed By:</strong> EXPORT_CONTROL</p>
-            </div>
-          )}
-        </Info>
+          )) : <p>No DPS screening record.</p>}
+        </Info>}
       </div>
 
-      {/* ATTENDANCE SECTION */}
       {(isEc || request.currentStatus === 'APPROVED' || request.currentStatus === 'VISIT_PROCESS_COMPLETED') && (
         <Info title="Attendance Tracking">
-          <p className="mb-3 text-xs text-[var(--muted)]">Mark attendance categories for Export Control compliance records.</p>
-          <div className="space-y-3">
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={fcRecord?.completed ?? false}
-                onChange={() => void handleAttendanceToggle('FACILITIES_CONTRACTOR', fcRecord?.completed ?? false)}
-                className="cursor-pointer"
-              />
-              <span className="font-semibold text-[var(--ink)]">FACILITIES_CONTRACTOR</span>
-              {fcRecord?.markedAt && <span className="text-xs text-[var(--muted)]">(Marked: {new Date(fcRecord.markedAt).toLocaleString()})</span>}
-            </label>
-            <label className="flex cursor-pointer items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={gtreRecord?.completed ?? false}
-                onChange={() => void handleAttendanceToggle('GAS_TURBINE_RESEARCH_ESTABLISHMENT', gtreRecord?.completed ?? false)}
-                className="cursor-pointer"
-              />
-              <span className="font-semibold text-[var(--ink)]">GAS_TURBINE_RESEARCH_ESTABLISHMENT</span>
-              {gtreRecord?.markedAt && <span className="text-xs text-[var(--muted)]">(Marked: {new Date(gtreRecord.markedAt).toLocaleString()})</span>}
-            </label>
-          </div>
+          <AttendanceToggle label="Facilities Contractor" category="FACILITIES_CONTRACTOR" record={fcRecord} onToggle={handleAttendanceToggle} />
+          <AttendanceToggle label="Gas Turbine Research Establishment" category="GAS_TURBINE_RESEARCH_ESTABLISHMENT" record={gtreRecord} onToggle={handleAttendanceToggle} />
         </Info>
       )}
 
-      {/* HISTORY & COMPLIANCE SECTIONS - VISIBLE TO EC & HOST, HIDDEN FOR RECEPTION */}
       {!isReception && (
         <>
-          <Info title="Visitor History (Previous Requests & Visit Days)">
+          <Info title="EC Review History">
+            {request.ecReviews?.length ? request.ecReviews.map(review => (
+              <div key={review.id} className="border-b border-[var(--silver)] pb-2">
+                <p><strong>{formatStatus(review.decision)}:</strong> {review.comments || 'No comments supplied.'}</p>
+                <p className="text-xs text-[var(--muted)]">Reviewer: {review.reviewerId} | {review.reviewedAt ? new Date(review.reviewedAt).toLocaleString() : 'Pending documentation'}</p>
+              </div>
+            )) : <p>No EC decisions recorded.</p>}
+          </Info>
+
+          <Info title="Information Requests">
+            {request.informationRequests?.length ? request.informationRequests.map(info => (
+              <div key={info.id} className="border-b border-[var(--silver)] pb-2">
+                <div className="flex items-center justify-between gap-3">
+                  <strong>{info.fields}</strong>
+                  <span className="rounded bg-[#fff3cd] px-2 py-0.5 text-xs font-semibold text-[#856404]">{formatStatus(info.status)}</span>
+                </div>
+                <p className="mt-1 text-xs text-[var(--muted)]">EC Comment: {info.comment}</p>
+                {info.responseSummary && <p className="mt-1 text-xs text-[var(--ink)]">Response: {info.responseSummary}</p>}
+              </div>
+            )) : <p>No information requests in history.</p>}
+          </Info>
+
+          <Info title="Visitor History">
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-[var(--royal-blue)]">Previous Requests</h3>
-                {request.previousRequests && request.previousRequests.length > 0 ? (
-                  <div className="mt-2 space-y-2">
-                    {request.previousRequests.map((prev) => (
-                      <div key={prev.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--silver)] pb-2 text-xs">
-                        <span>
-                          <strong className="text-[var(--royal-blue)]">{prev.requestNumber}</strong> — {prev.visitingSite} ({prev.purpose})
-                        </span>
-                        <span className="rounded bg-[#d4edda] px-2 py-0.5 font-semibold text-[#155724]">{formatStatus(prev.currentStatus)}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--silver)] pb-2 text-xs">
-                    <span>
-                      <strong className="text-[var(--royal-blue)]">RRVMS-2026-000000</strong> — Rolls-Royce Demo Facility (Initial technical consultation on engine design specifications)
-                    </span>
-                    <span className="rounded bg-[#d4edda] px-2 py-0.5 font-semibold text-[#155724]">Visit Process Completed</span>
-                  </div>
-                )}
+                {request.previousRequests?.length ? request.previousRequests.map(prev => (
+                  <p key={prev.id} className="mt-2 text-xs">Request <strong>{prev.requestNumber}</strong> | {prev.visitingSite} | {formatStatus(prev.currentStatus)}</p>
+                )) : <p className="mt-2 text-xs text-[var(--muted)]">No previous requests.</p>}
               </div>
-
               <div>
                 <h3 className="text-sm font-bold text-[var(--royal-blue)]">Previous Visit Days</h3>
-                {request.previousVisitDays && request.previousVisitDays.length > 0 ? (
-                  <div className="mt-2 space-y-1 text-xs">
-                    {request.previousVisitDays.map((vd) => (
-                      <p key={vd.id}>
-                        Request <strong>{vd.requestNumber}</strong> — Visit Date: {String(vd.visitDate)} — Status: <span className="font-semibold text-green-700">{formatStatus(vd.status)}</span>
-                      </p>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-xs text-[var(--muted)]">Request RRVMS-2026-000000 — Visit Date: 14 days ago — Status: Completed</p>
-                )}
+                {request.previousVisitDays?.length ? request.previousVisitDays.map(day => (
+                  <p key={day.id} className="mt-2 text-xs">Request <strong>{day.requestNumber}</strong> | Visit Date: {day.visitDate} | Status: {formatStatus(day.status)}</p>
+                )) : <p className="mt-2 text-xs text-[var(--muted)]">No previous visit days.</p>}
               </div>
             </div>
           </Info>
 
-          {/* COMMENTS SECTION */}
-          <Info title="Comments Timeline">
-            {request.comments && request.comments.length > 0 ? (
-              <div className="space-y-3">
-                {request.comments.map((comment) => (
-                  <div key={comment.id} className="border-b border-[var(--silver)] pb-3">
-                    <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                      <span className="font-semibold text-[var(--royal-blue)]">{formatStatus(comment.type)}</span>
-                      <span>{new Date(comment.createdAt).toLocaleString()}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-[var(--ink)]">{comment.text}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No comments recorded.</p>
-            )}
-          </Info>
-
-          {/* INFORMATION REQUEST HISTORY */}
-          <Info title="Information Request History">
-            {request.informationRequests && request.informationRequests.length > 0 ? (
-              <div className="space-y-3">
-                {request.informationRequests.map((info) => (
-                  <div key={info.id} className="border-b border-[var(--silver)] pb-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-[var(--royal-blue)]">Request: {info.fields}</span>
-                      <span className={`rounded px-2 py-0.5 text-xs font-semibold ${info.status === 'RESOLVED' ? 'bg-[#d4edda] text-[#155724]' : 'bg-[#fff3cd] text-[#856404]'}`}>
-                        {formatStatus(info.status)}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--muted)]">EC Comment: "{info.comment}"</p>
-                    {info.responseSummary && (
-                      <p className="mt-1 text-xs font-medium text-[var(--ink)]">
-                        Visitor Response: "{info.responseSummary}" {info.respondedAt && `at ${new Date(info.respondedAt).toLocaleString()}`}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No information requests in history.</p>
-            )}
-          </Info>
-
-          {/* AUDIT TIMELINE */}
           <Info title="Audit Timeline">
-            {request.auditHistory.length ? (
-              <div className="space-y-2">
-                {request.auditHistory.map((entry) => (
-                  <p key={entry.id} className="text-xs">
-                    <strong className="text-[var(--royal-blue)]">{formatStatus(entry.action)}</strong> — {entry.details}{' '}
-                    <span className="text-[var(--muted)]">({new Date(entry.createdAt).toLocaleString()})</span>
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p>No audit entries.</p>
-            )}
+            {request.auditHistory.length ? request.auditHistory.map(item => (
+              <p key={item.id} className="border-b border-[var(--silver)] pb-2 text-xs">
+                <strong>{formatStatus(item.action)}</strong> | {item.details} | {new Date(item.createdAt).toLocaleString()}
+              </p>
+            )) : <p>No audit events recorded.</p>}
           </Info>
         </>
       )}
 
-      {/* REQUEST INFORMATION MODAL */}
       {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
-            <h2 className="display text-xl font-bold text-[var(--royal-blue)]">Request Additional Information</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              This will set status to PENDING_DOCUMENTATION and notify the host to submit revised details.
-            </p>
-            <div className="mt-4">
-              <label htmlFor="infoComment" className="block text-xs font-semibold uppercase text-[var(--muted)]">EC Query / Details Required</label>
-              <textarea
-                id="infoComment"
-                rows={4}
-                className="mt-2 w-full border border-[var(--silver)] p-3 text-sm"
-                value={infoComment}
-                onChange={(e) => setInfoComment(e.target.value)}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowInfoModal(false)}
-                className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => void handleRequestInfo()}
-                className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--rr-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Submit Request
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal title="Request Additional Information">
+          <p className="text-sm text-[var(--muted)]">This will set status to Pending Documentation and notify the Host.</p>
+          <TextArea id="infoComment" label="EC Query / Details Required" value={infoComment} onChange={setInfoComment} />
+          <ModalActions onCancel={() => setShowInfoModal(false)}>
+            <button disabled={acting || !infoComment.trim()} type="button" onClick={() => void handleRequestInfo()} className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Submit Request</button>
+          </ModalActions>
+        </Modal>
       )}
 
-      {/* REJECT MODAL */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
-            <h2 className="display text-xl font-bold text-[#dc3545]">Reject Visitor Request</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Provide a mandatory rejection comment for Export Control records.
-            </p>
-            <div className="mt-4">
-              <label htmlFor="rejectReason" className="block text-xs font-semibold uppercase text-[var(--muted)]">Rejection Reason</label>
-              <textarea
-                id="rejectReason"
-                rows={4}
-                className="mt-2 w-full border border-[var(--silver)] p-3 text-sm"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowRejectModal(false)}
-                className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => void handleReject()}
-                className="cursor-pointer rounded bg-[#dc3545] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c82333] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Confirm Rejection
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal title="Reject Visitor Request" titleClass="text-[#dc3545]">
+          <p className="text-sm text-[var(--muted)]">Provide a mandatory rejection comment for Export Control records.</p>
+          <TextArea id="rejectReason" label="Rejection Reason" value={rejectReason} onChange={setRejectReason} />
+          <ModalActions onCancel={() => setShowRejectModal(false)}>
+            <button disabled={acting || !rejectReason.trim()} type="button" onClick={() => void handleReject()} className="cursor-pointer rounded bg-[#dc3545] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Reject Request</button>
+          </ModalActions>
+        </Modal>
       )}
 
-      {/* VERIFY IDENTITY MODAL (RECEPTION) */}
       {showVerifyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
-            <h2 className="display text-xl font-bold text-[var(--royal-blue)]">Verify Visitor Identity & Assets</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Verify the visitor's physical identity document matches their declaration.
-            </p>
-            <div className="mt-4 space-y-3">
-              <label className="block text-xs font-semibold uppercase text-[var(--muted)]">
-                ID Type
-                <input
-                  type="text"
-                  className="mt-1 block w-full border border-[var(--silver)] p-2 text-sm font-normal"
-                  value={verifyIdType}
-                  onChange={(e) => setVerifyIdType(e.target.value)}
-                />
-              </label>
-              <label className="block text-xs font-semibold uppercase text-[var(--muted)]">
-                ID Last 4 Digits
-                <input
-                  type="text"
-                  maxLength={4}
-                  className="mt-1 block w-full border border-[var(--silver)] p-2 text-sm font-normal"
-                  value={verifyIdLast4}
-                  onChange={(e) => setVerifyIdLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                />
-              </label>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowVerifyModal(false)}
-                className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => void handleVerify()}
-                className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--rr-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Confirm Verification
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal title="Verify Visitor Identity & Assets">
+          <Input label="ID Type" value={verifyIdType} onChange={setVerifyIdType} />
+          <Input label="ID Last 4 Digits" value={verifyIdLast4} onChange={value => setVerifyIdLast4(value.replace(/\D/g, '').slice(0, 4))} maxLength={4} />
+          <ModalActions onCancel={() => setShowVerifyModal(false)}>
+            <button disabled={acting} type="button" onClick={() => void handleVerify()} className="cursor-pointer rounded bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Confirm Verification</button>
+          </ModalActions>
+        </Modal>
       )}
 
-      {/* ISSUE BADGE & CHECK-IN MODAL (RECEPTION) */}
       {showCheckInModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
-            <h2 className="display text-xl font-bold text-[var(--royal-blue)]">Issue Visitor Badge & Check-In</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">Assign a physical visitor badge number and check-in the visitor.</p>
-            <div className="mt-4">
-              <label htmlFor="badgeNo" className="block text-xs font-semibold uppercase text-[var(--muted)]">Badge Number</label>
-              <input
-                id="badgeNo"
-                type="text"
-                className="mt-2 w-full border border-[var(--silver)] p-3 text-sm"
-                value={badgeNumber}
-                onChange={(e) => setBadgeNumber(e.target.value)}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowCheckInModal(false)}
-                className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={acting || !badgeNumber.trim()}
-                type="button"
-                onClick={() => void handleCheckIn()}
-                className="cursor-pointer rounded bg-[#28a745] px-4 py-2 text-sm font-semibold text-white hover:bg-[#218838] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Complete Check-In
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal title="Issue Visitor Badge & Check-In">
+          <Input label="Badge Number" value={badgeNumber} onChange={setBadgeNumber} />
+          <ModalActions onCancel={() => setShowCheckInModal(false)}>
+            <button disabled={acting || !badgeNumber.trim()} type="button" onClick={() => void handleCheckIn()} className="cursor-pointer rounded bg-[#28a745] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">Complete Check-In</button>
+          </ModalActions>
+        </Modal>
       )}
 
-      {/* HOLD MODAL (RECEPTION) */}
       {showHoldModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
-            <h2 className="display text-xl font-bold text-[#856404]">Place Visitor on Hold</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">Record reception hold reason (e.g. undeclared asset or identity mismatch) for EC review.</p>
-            <div className="mt-4">
-              <label htmlFor="holdText" className="block text-xs font-semibold uppercase text-[var(--muted)]">Hold Details / Comment</label>
-              <textarea
-                id="holdText"
-                rows={3}
-                className="mt-2 w-full border border-[var(--silver)] p-3 text-sm"
-                value={holdComment}
-                onChange={(e) => setHoldComment(e.target.value)}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowHoldModal(false)}
-                className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={acting}
-                type="button"
-                onClick={() => void handleHold()}
-                className="cursor-pointer rounded bg-[#ffc107] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e0a800] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Confirm Hold
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal title="Place Visitor on Hold" titleClass="text-[#856404]">
+          <TextArea id="holdText" label="Hold Details / Comment" value={holdComment} onChange={setHoldComment} />
+          <ModalActions onCancel={() => setShowHoldModal(false)}>
+            <button disabled={acting} type="button" onClick={() => void handleHold()} className="cursor-pointer rounded bg-[#ffc107] px-4 py-2 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60">Confirm Hold</button>
+          </ModalActions>
+        </Modal>
       )}
     </div>
   )
 }
 
-function Actions({
-  role,
-  status,
-  acting,
-  onAction,
-}: {
-  role: string
-  status: string
-  acting: boolean
-  onAction: (name: string, values?: Record<string, string>) => Promise<void>
-}) {
+function Actions({ role, status, acting, onAction }: { role: string; status: string; acting: boolean; onAction: (name: string, values?: Record<string, string>) => Promise<void> }) {
   const button = (name: string, label: string, values?: Record<string, string>) => (
-    <button
-      disabled={acting}
-      type="button"
-      onClick={() => void onAction(name, values)}
-      className="cursor-pointer rounded-[4px] bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {label}
-    </button>
+    <button disabled={acting} type="button" onClick={() => void onAction(name, values)} className="cursor-pointer rounded-[4px] bg-[var(--royal-blue)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{label}</button>
   )
   const host = role === 'HOST_REQUESTER'
   return (
     <div className="flex flex-wrap gap-2">
       {host && status === 'VISITOR_FORM_SUBMITTED' && button('host-review', 'Review visitor form')}
-      {host && status === 'HOST_REVIEW' && button('host-submit', 'Final submit')}
+      {host && status === 'HOST_REVIEW' && button('send-to-ec', 'SEND TO EC')}
       {host && status === 'HOST_DPS' && button('dps', 'Submit host DPS', { dpsPerformer: 'HOST_REQUESTER', dpsResult: 'Clear' })}
     </div>
   )
@@ -770,4 +426,68 @@ function Info({ title, children }: { title: string; children: ReactNode }) {
       <div className="mt-4 space-y-2 text-sm text-[var(--ink)]">{children}</div>
     </section>
   )
+}
+
+function Field({ label, value, strong = false }: { label: string; value?: string; strong?: boolean }) {
+  return <p><strong>{label}:</strong> <span className={strong ? 'font-bold text-[var(--royal-blue)]' : ''}>{value || 'N/A'}</span></p>
+}
+
+function AttendanceToggle({ label, category, record, onToggle }: { label: string; category: string; record?: { completed: boolean; markedAt?: string }; onToggle: (category: string, currentCompleted: boolean) => Promise<void> }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 text-sm">
+      <input type="checkbox" checked={record?.completed ?? false} onChange={() => void onToggle(category, record?.completed ?? false)} className="cursor-pointer" />
+      <span className="font-semibold text-[var(--ink)]">{label}</span>
+      {record?.markedAt && <span className="text-xs text-[var(--muted)]">Marked: {new Date(record.markedAt).toLocaleString()}</span>}
+    </label>
+  )
+}
+
+function ActionButton({ children, disabled, onClick, tone = 'primary' }: { children: ReactNode; disabled: boolean; onClick: () => void; tone?: 'primary' | 'success' | 'warning' }) {
+  const color = tone === 'success' ? 'bg-[#28a745] text-white' : tone === 'warning' ? 'bg-[#ffc107] text-black' : 'bg-[var(--royal-blue)] text-white'
+  return <button disabled={disabled} type="button" onClick={onClick} className={`cursor-pointer rounded px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${color}`}>{children}</button>
+}
+
+function Modal({ title, titleClass = 'text-[var(--royal-blue)]', children }: { title: string; titleClass?: string; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg border border-[var(--silver)] bg-white p-6 shadow-xl">
+        <h2 className={`display text-xl font-bold ${titleClass}`}>{title}</h2>
+        <div className="mt-4 space-y-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function ModalActions({ onCancel, children }: { onCancel: () => void; children: ReactNode }) {
+  return (
+    <div className="mt-6 flex justify-end gap-3">
+      <button type="button" onClick={onCancel} className="cursor-pointer border border-[var(--silver)] px-4 py-2 text-sm font-semibold text-[var(--ink)]">Cancel</button>
+      {children}
+    </div>
+  )
+}
+
+function TextArea({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label htmlFor={id} className="block text-xs font-semibold uppercase text-[var(--muted)]">
+      {label}
+      <textarea id={id} rows={4} className="mt-2 w-full border border-[var(--silver)] p-3 text-sm font-normal text-[var(--ink)]" value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  )
+}
+
+function Input({ label, value, onChange, maxLength }: { label: string; value: string; onChange: (value: string) => void; maxLength?: number }) {
+  return (
+    <label className="block text-xs font-semibold uppercase text-[var(--muted)]">
+      {label}
+      <input type="text" maxLength={maxLength} className="mt-2 w-full border border-[var(--silver)] p-3 text-sm font-normal text-[var(--ink)]" value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  )
+}
+
+function formatClassification(value?: string) {
+  if (value === 'GtrRedTag') return 'GTR — Red Tag'
+  if (value === 'Vendor') return 'Vendor'
+  if (value === 'Visitor') return 'Visitor'
+  return value || 'N/A'
 }

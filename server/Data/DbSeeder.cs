@@ -62,9 +62,9 @@ public static class DbSeeder
         var hostUser = new User
         {
             Id = StableGuid("prototype-host-requester"),
-            EmployeeNumber = "RR-01001",
+            EmployeeNumber = "EMP-01001",
             FullName = "Alex Morgan",
-            Email = "alex.morgan@rolls-royce.com",
+            Email = "alex.morgan@rrvms.com",
             Role = UserRole.HOST_REQUESTER,
             IsActive = true,
             CreatedAt = now,
@@ -74,9 +74,9 @@ public static class DbSeeder
         var ecUser = new User
         {
             Id = StableGuid("prototype-export-control"),
-            EmployeeNumber = "RR-02002",
+            EmployeeNumber = "EMP-02002",
             FullName = "Priya Shah",
-            Email = "priya.shah@rolls-royce.com",
+            Email = "priya.shah@rrvms.com",
             Role = UserRole.EXPORT_CONTROL,
             IsActive = true,
             CreatedAt = now,
@@ -86,9 +86,9 @@ public static class DbSeeder
         var receptionUser = new User
         {
             Id = StableGuid("prototype-reception"),
-            EmployeeNumber = "RR-03003",
+            EmployeeNumber = "EMP-03003",
             FullName = "Michael Brown",
-            Email = "michael.brown@rolls-royce.com",
+            Email = "michael.brown@rrvms.com",
             Role = UserRole.RECEPTION,
             IsActive = true,
             CreatedAt = now,
@@ -98,9 +98,9 @@ public static class DbSeeder
         var escortUser = new User
         {
             Id = StableGuid("prototype-escort-host"),
-            EmployeeNumber = "RR-04004",
+            EmployeeNumber = "EMP-04004",
             FullName = "Sarah Jenkins",
-            Email = "sarah.jenkins@rolls-royce.com",
+            Email = "sarah.jenkins@rrvms.com",
             Role = UserRole.HOST_REQUESTER,
             IsActive = true,
             CreatedAt = now,

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RRVMS.Api.Data;
@@ -11,9 +12,11 @@ using RRVMS.Api.Data;
 namespace RRVMS.Api.Migrations
 {
     [DbContext(typeof(RrvmsDbContext))]
-    partial class RrvmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914092655_AddFacultyGtrAndVisitingCompanyAddress")]
+    partial class AddFacultyGtrAndVisitingCompanyAddress
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -461,10 +464,6 @@ namespace RRVMS.Api.Migrations
                     b.Property<Guid>("BadgeId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("BatchId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTimeOffset>("CheckedInAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -493,10 +492,6 @@ namespace RRVMS.Api.Migrations
 
                     b.Property<bool>("BadgeReturned")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("BatchId")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CheckedOutAt")
                         .HasColumnType("timestamp with time zone");
@@ -837,9 +832,6 @@ namespace RRVMS.Api.Migrations
                     b.Property<bool>("Gtr")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("IdClassification")
-                        .HasColumnType("integer");
-
                     b.Property<DateTimeOffset?>("MainHostChangedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -914,8 +906,7 @@ namespace RRVMS.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BatchId")
-                        .IsUnique();
+                    b.HasIndex("BatchId");
 
                     b.HasIndex("MainHostId");
 

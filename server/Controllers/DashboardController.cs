@@ -19,7 +19,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
         var requests = dbContext.VisitorRequests.AsQueryable();
         if (role == "HOST_REQUESTER") requests = requests.Where(request => request.RequesterId == StableGuid(currentUser.UserId));
         var totalRequests = await requests.CountAsync(cancellationToken);
-        var pendingEcReviews = await requests.CountAsync(request => request.Status == RequestStatus.EC_REVIEW || request.Status == RequestStatus.EC_RE_REVIEW_REQUIRED || request.Status == RequestStatus.EC_DPS, cancellationToken);
+        var pendingEcReviews = await requests.CountAsync(request => request.Status == RequestStatus.PENDING_EC_REVIEW || request.Status == RequestStatus.EC_REVIEW || request.Status == RequestStatus.EC_RE_REVIEW_REQUIRED || request.Status == RequestStatus.EC_DPS, cancellationToken);
         var pendingDocumentation = await requests.CountAsync(request => request.Status == RequestStatus.PENDING_DOCUMENTATION, cancellationToken);
         var todaysVisits = await dbContext.VisitDays.CountAsync(day => day.VisitDate == today, cancellationToken);
         var currentlyInside = await dbContext.VisitDays.CountAsync(day => day.Status == VisitDayStatus.CHECKED_IN, cancellationToken);
@@ -41,7 +41,7 @@ public sealed class DashboardController(RrvmsDbContext dbContext, ICurrentUserSe
             .Include(r => r.DpsRecords);
 
         var pendingEcReviewsList = await requests
-            .Where(r => r.Status == RequestStatus.EC_REVIEW || r.Status == RequestStatus.EC_RE_REVIEW_REQUIRED || r.Status == RequestStatus.EC_DPS)
+            .Where(r => r.Status == RequestStatus.PENDING_EC_REVIEW || r.Status == RequestStatus.EC_REVIEW || r.Status == RequestStatus.EC_RE_REVIEW_REQUIRED || r.Status == RequestStatus.EC_DPS)
             .OrderByDescending(r => r.UpdatedAt)
             .Select(r => new {
                 r.Id,

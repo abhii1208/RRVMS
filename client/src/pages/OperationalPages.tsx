@@ -9,7 +9,7 @@ export function PendingActionsPage() {
   const [error, setError] = useState('')
   useEffect(() => {
     listVisitorRequests()
-      .then(result => setItems(result.items.filter(item => ['VISITOR_FORM_PENDING', 'VISITOR_FORM_SUBMITTED', 'HOST_DPS', 'EC_REVIEW', 'PENDING_DOCUMENTATION', 'EC_RE_REVIEW_REQUIRED'].includes(item.currentStatus))))
+      .then(result => setItems(result.items.filter(item => ['VISITOR_FORM_PENDING', 'VISITOR_FORM_SUBMITTED', 'HOST_DPS', 'PENDING_EC_REVIEW', 'EC_REVIEW', 'PENDING_DOCUMENTATION', 'EC_RE_REVIEW_REQUIRED'].includes(item.currentStatus))))
       .catch(reason => setError(userFacingApiError(reason, 'Pending actions could not be loaded.')))
   }, [])
   return (
@@ -90,8 +90,12 @@ export function ReceptionPage() {
                       <th className="p-3">Request</th>
                       <th className="p-3">Visitor Name</th>
                       <th className="p-3">Company</th>
+                      <th className="p-3">Main Host / Escort</th>
+                      <th className="p-3">Classification</th>
                       <th className="p-3">Visit Date</th>
-                      <th className="p-3">Status</th>
+                      <th className="p-3">ID / Assets</th>
+                      <th className="p-3">Badge</th>
+                      <th className="p-3">Approval / Visit Status</th>
                       <th className="p-3">Action</th>
                     </tr>
                   </thead>
@@ -102,10 +106,14 @@ export function ReceptionPage() {
                         <td className="p-3 font-medium text-[var(--ink)]">{item.requestNumber}</td>
                         <td className="p-3 font-medium text-[var(--ink)]">{item.visitorName}</td>
                         <td className="p-3 text-[var(--muted)]">{item.company}</td>
+                        <td className="p-3 text-[var(--muted)]">{item.mainHost}{item.escort ? ` / ${item.escort}` : ''}</td>
+                        <td className="p-3 text-[var(--muted)]">{[item.faculty && 'Faculty', item.gtr && 'GTR', item.idClassification].filter(Boolean).join(' / ') || '-'}</td>
                         <td className="p-3 text-[var(--muted)]">{item.visitDate}</td>
+                        <td className="p-3 text-[var(--muted)]">{item.idType || '-'} / {item.idLast4 || '-'} / {item.assets?.length ?? 0}</td>
+                        <td className="p-3 text-[var(--muted)]">{item.badge || '-'}</td>
                         <td className="p-3">
                           <span className="rounded bg-[#e9eef6] px-2.5 py-1 text-xs font-semibold text-[var(--royal-blue)]">
-                            {formatStatus(item.status)}
+                            {formatStatus(item.approvalStatus)} / {formatStatus(item.status)}
                           </span>
                         </td>
                         <td className="p-3">

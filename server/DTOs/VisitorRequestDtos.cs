@@ -5,7 +5,10 @@ namespace RRVMS.Api.DTOs;
 public sealed class CreateVisitorRequestDto
 {
     [Required] public string VisitorType { get; init; } = "External";
-    [Required, StringLength(160)] public string VisitingCompany { get; init; } = string.Empty;
+    public bool Faculty { get; init; }
+    public bool Gtr { get; init; }
+    public bool IsDraft { get; init; }
+    [StringLength(160)] public string VisitingCompany { get; init; } = string.Empty;
     [Required, StringLength(120)] public string VisitingSite { get; init; } = string.Empty;
     [Required, StringLength(1000)] public string AreasToVisit { get; init; } = string.Empty;
     [Required, StringLength(80)] public string SiteTimezone { get; init; } = string.Empty;
@@ -36,6 +39,7 @@ public sealed class VisitorFormDto
     public string Country { get; init; } = string.Empty;
     public string Designation { get; init; } = string.Empty;
     public string CompanyName { get; init; } = string.Empty;
+    public string CompanyAddress { get; init; } = string.Empty;
     public string OfficeCity { get; init; } = string.Empty;
     public string OfficeCountry { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
@@ -52,18 +56,21 @@ public sealed class SubmitVisitorFormDto
     [Required, StringLength(80)] public string Nationality { get; init; } = string.Empty;
     [Required, StringLength(80)] public string Country { get; init; } = string.Empty;
     [StringLength(120)] public string Designation { get; init; } = string.Empty;
-    [Required, StringLength(160)] public string CompanyName { get; init; } = string.Empty;
+    [StringLength(160)] public string CompanyName { get; init; } = string.Empty;
+    [StringLength(300)] public string CompanyAddress { get; init; } = string.Empty;
     [StringLength(160)] public string OfficeCity { get; init; } = string.Empty;
-    [Required, StringLength(80)] public string OfficeCountry { get; init; } = string.Empty;
-    [Required, EmailAddress] public string Email { get; init; } = string.Empty;
-    [Required, StringLength(40)] public string Telephone { get; init; } = string.Empty;
+    [StringLength(80)] public string OfficeCountry { get; init; } = string.Empty;
+    [EmailAddress] public string? Email { get; init; }
+    [StringLength(40)] public string? Telephone { get; init; }
     [Required, StringLength(40)] public string IdType { get; init; } = string.Empty;
     [Required, RegularExpression("^[0-9]{4}$")] public string IdLast4 { get; init; } = string.Empty;
+    public bool IsDraft { get; init; }
     public List<VisitorAssetDto> Assets { get; init; } = [];
 }
 
 public sealed class VisitorAssetDto
 {
+    public Guid? Id { get; init; }
     [Required, StringLength(80)] public string AssetType { get; init; } = string.Empty;
     [StringLength(300)] public string Description { get; init; } = string.Empty;
     [StringLength(120)] public string SerialNumber { get; init; } = string.Empty;
@@ -99,6 +106,9 @@ public sealed record VisitorRequestDetailDto(
     string VisitPurposeType,
     string MainHostName,
     string? EscortingHostName,
+    bool Faculty,
+    bool Gtr,
+    string? IdClassification,
     string CurrentStatus,
     IReadOnlyList<VisitDayDto> VisitDays,
     IReadOnlyList<AssetDto> Assets,

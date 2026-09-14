@@ -16,6 +16,7 @@ public sealed class WorkflowActionDto
     public string? DpsResult { get; init; }
     public string? DpsNotes { get; init; }
     public string? DpsPerformer { get; init; }
+    public string? IdClassification { get; init; }
 }
 
 public sealed record WorkflowResultDto(Guid RequestId, string RequestNumber, string Status, string Action);

@@ -34,11 +34,18 @@ public sealed class ReceptionController(RrvmsDbContext dbContext, ICurrentUserSe
             status = day.Status.ToString(),
             requestId = day.VisitorRequestId,
             requestNumber = day.VisitorRequest.RequestNumber,
-            batchId = string.IsNullOrWhiteSpace(day.VisitorRequest.BatchId) ? $"BATCH-2026-{day.VisitorRequest.RequestNumber.Replace("RRVMS-2026-", "")}" : day.VisitorRequest.BatchId,
+            batchId = day.VisitorRequest.BatchId,
             visitorName = day.VisitorRequest.Visitor.FullName,
             company = day.VisitorRequest.Visitor.CompanyName,
+            mainHost = dbContext.Users.Where(user => user.Id == day.VisitorRequest.MainHostId).Select(user => user.FullName).FirstOrDefault() ?? string.Empty,
+            escort = day.VisitorRequest.EscortingHostId.HasValue ? dbContext.Users.Where(user => user.Id == day.VisitorRequest.EscortingHostId.Value).Select(user => user.FullName).FirstOrDefault() : null,
+            faculty = day.VisitorRequest.Faculty,
+            gtr = day.VisitorRequest.Gtr,
+            idClassification = day.VisitorRequest.IdClassification.HasValue ? day.VisitorRequest.IdClassification.Value.ToString() : null,
+            approvalStatus = day.VisitorRequest.Status.ToString(),
             idType = day.VisitorRequest.Visitor.IdType,
             idLast4 = day.VisitorRequest.Visitor.IdLast4,
+            badge = dbContext.Badges.Where(badge => badge.VisitDayId == day.Id).OrderByDescending(badge => badge.IssuedAt).Select(badge => badge.BadgeNumber).FirstOrDefault(),
             assets = day.VisitorRequest.Assets.Select(a => new { a.Id, a.AssetType, a.Description, a.SerialNumber, verificationStatus = a.VerificationStatus.ToString() }).ToList()
         }).ToListAsync(cancellationToken);
 
@@ -73,11 +80,18 @@ public sealed class ReceptionController(RrvmsDbContext dbContext, ICurrentUserSe
             status = day.Status.ToString(),
             requestId = day.VisitorRequestId,
             requestNumber = day.VisitorRequest.RequestNumber,
-            batchId = string.IsNullOrWhiteSpace(day.VisitorRequest.BatchId) ? $"BATCH-2026-{day.VisitorRequest.RequestNumber.Replace("RRVMS-2026-", "")}" : day.VisitorRequest.BatchId,
+            batchId = day.VisitorRequest.BatchId,
             visitorName = day.VisitorRequest.Visitor.FullName,
             company = day.VisitorRequest.Visitor.CompanyName,
+            mainHost = dbContext.Users.Where(user => user.Id == day.VisitorRequest.MainHostId).Select(user => user.FullName).FirstOrDefault() ?? string.Empty,
+            escort = day.VisitorRequest.EscortingHostId.HasValue ? dbContext.Users.Where(user => user.Id == day.VisitorRequest.EscortingHostId.Value).Select(user => user.FullName).FirstOrDefault() : null,
+            faculty = day.VisitorRequest.Faculty,
+            gtr = day.VisitorRequest.Gtr,
+            idClassification = day.VisitorRequest.IdClassification.HasValue ? day.VisitorRequest.IdClassification.Value.ToString() : null,
+            approvalStatus = day.VisitorRequest.Status.ToString(),
             idType = day.VisitorRequest.Visitor.IdType,
             idLast4 = day.VisitorRequest.Visitor.IdLast4,
+            badge = dbContext.Badges.Where(badge => badge.VisitDayId == day.Id).OrderByDescending(badge => badge.IssuedAt).Select(badge => badge.BadgeNumber).FirstOrDefault(),
             assets = day.VisitorRequest.Assets.Select(a => new { a.Id, a.AssetType, a.Description, a.SerialNumber, verificationStatus = a.VerificationStatus.ToString() }).ToList()
         }).ToListAsync(cancellationToken);
 

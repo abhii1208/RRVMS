@@ -28,7 +28,8 @@ public enum RequestStatus
     APPROVED,
     REJECTED,
     RECEPTION_HOLD,
-    VISIT_PROCESS_COMPLETED
+    VISIT_PROCESS_COMPLETED,
+    PENDING_EC_REVIEW
 }
 
 public enum VisitDayStatus
@@ -49,6 +50,7 @@ public enum DpsStatus { NotRequired, Pending, InProgress, Completed, Failed }
 public enum DpsResult { Clear, Flagged, Pending, Rejected }
 public enum EcReviewStatus { Pending, InProgress, PendingDocumentation, Approved, Rejected }
 public enum EcDecision { Approve, RequestDocumentation, Reject }
+public enum VisitorIdClassification { Vendor, Visitor, GtrRedTag }
 public enum BadgeStatus { Available, Issued, Returned, Lost }
 public enum AttendanceCategory { FACILITIES_CONTRACTOR, GAS_TURBINE_RESEARCH_ESTABLISHMENT }
 public enum CommentType { EC_REQUEST, EC_REJECTION, HOST_CHANGE, UNDECLARED_ASSET, HOLD, EXCEPTION, GENERAL }
@@ -115,6 +117,8 @@ public sealed class VisitorRequest
     
     // BASIC VISIT DETAILS (entered by Host/Requester at creation)
     public VisitorType VisitorType { get; set; }
+    public bool Faculty { get; set; }
+    public bool Gtr { get; set; }
     public string VisitingCompany { get; set; } = string.Empty;
     public string VisitingSite { get; set; } = string.Empty;
     public string VisitPurposeType { get; set; } = string.Empty; // Technical, Non-Technical, Other
@@ -129,6 +133,7 @@ public sealed class VisitorRequest
     // DPS
     public Guid? DpsRecordId { get; set; }
     public DpsPerformedByType? DpsPerformedBy { get; set; }
+    public VisitorIdClassification? IdClassification { get; set; }
     
     // REJECTION INFO
     public string? RejectionReason { get; set; }
@@ -256,6 +261,7 @@ public sealed class VisitCheckIn
 {
     public Guid Id { get; set; }
     public Guid VisitDayId { get; set; }
+    public string BatchId { get; set; } = string.Empty;
     public Guid BadgeId { get; set; }
     public Guid ReceptionUserId { get; set; }
     public bool PhysicalIdVerified { get; set; }
@@ -267,6 +273,7 @@ public sealed class VisitCheckOut
 {
     public Guid Id { get; set; }
     public Guid VisitDayId { get; set; }
+    public string BatchId { get; set; } = string.Empty;
     public Guid BadgeId { get; set; }
     public Guid ReceptionUserId { get; set; }
     public bool BadgeReturned { get; set; }
@@ -308,6 +315,7 @@ public sealed class VisitorForm
     public string Country { get; set; } = string.Empty;
     public string Designation { get; set; } = string.Empty;
     public string CompanyName { get; set; } = string.Empty;
+    public string CompanyAddress { get; set; } = string.Empty;
     public string OfficeCity { get; set; } = string.Empty;
     public string OfficeCountry { get; set; } = string.Empty;
     public string Telephone { get; set; } = string.Empty;

@@ -163,6 +163,9 @@ export type VisitorRequestDetail = {
   visitPurposeType: string
   mainHostName?: string
   escortingHostName?: string
+  faculty?: boolean
+  gtr?: boolean
+  idClassification?: string
   currentStatus: string
   visitorFormId?: string
   visitorFormIds?: string[]
@@ -240,8 +243,15 @@ export type ReceptionVisitor = {
   batchId: string
   visitorName: string
   company: string
+  mainHost: string
+  escort?: string | null
+  faculty: boolean
+  gtr: boolean
+  idClassification?: string | null
+  approvalStatus: string
   idType?: string
   idLast4?: string
+  badge?: string | null
   assets?: Array<{ id: string; assetType: string; description: string; serialNumber: string; verificationStatus: string }>
 }
 
@@ -290,21 +300,22 @@ export type WorkflowAction = {
   dpsResult?: string
   dpsNotes?: string
   newUserId?: string
+  idClassification?: string
 }
 export async function executeVisitorRequestAction(id: string, action: WorkflowAction) {
   return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/actions`, action)).data
 }
 
-export async function ecRequestInformation(id: string, comment: string) {
-  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/request-information`, { requestedInformation: comment, comment })).data
+export async function ecRequestInformation(id: string, comment: string, idClassification: string) {
+  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/request-information`, { requestedInformation: comment, comment, idClassification })).data
 }
 
-export async function ecApprove(id: string, comment?: string) {
-  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/approve`, { comment })).data
+export async function ecApprove(id: string, comment: string | undefined, idClassification: string) {
+  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/approve`, { comment, idClassification })).data
 }
 
-export async function ecReject(id: string, reason: string) {
-  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/reject`, { reason, comment: reason })).data
+export async function ecReject(id: string, reason: string, idClassification: string) {
+  return (await apiClient.post<VisitorRequestDetail>(`/api/visitor-requests/${id}/ec/reject`, { reason, comment: reason, idClassification })).data
 }
 
 export async function updateAttendance(requestId: string, input: { visitDayId?: string; category: string; completed: boolean; comments?: string }) {
